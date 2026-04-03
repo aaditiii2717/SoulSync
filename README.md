@@ -107,16 +107,6 @@ npm run build
 - `npm run preview`: Bootstraps a local server to preview the production build.
 - `npm run lint`: Analyzes the codebase for potential linting issues using ESLint.
 
-## 🌐 Deployment 
-
-This application uses the `vite-plugin-cloudflare` and is natively configured for edge deployment utilizing [Cloudflare Workers](https://workers.cloudflare.com/).
-
-To deploy via Wrangler:
-```bash
-npx wrangler deploy
-# Make sure your wrangler.jsonc is properly configured with your account ID.
-```
-
 ## 🤝 Contributing
 
 1. Fork the repository
