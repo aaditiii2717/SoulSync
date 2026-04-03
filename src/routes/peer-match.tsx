@@ -61,7 +61,8 @@ function PeerMatchPage() {
     setLoading(true);
     const { data } = await supabase
       .from("volunteers")
-      .select("*")
+      .select("id, name, expertise, bio, languages")
+      .eq("is_active", true)
       .contains("expertise", [issueLabel]);
     setVolunteers((data as Volunteer[]) || []);
     setLoading(false);
@@ -148,7 +149,7 @@ function PeerMatchPage() {
               Book a <span className="text-gradient">Support Session</span>
             </h1>
             <p className="mt-3 text-muted-foreground max-w-lg mx-auto">
-              Connect with a trained, verified peer volunteer. Choose your issue, pick a supporter, and book a time — completely anonymous.
+              Connect with an available peer supporter. Choose your issue, pick a supporter, and book a time, all anonymously.
             </p>
           </div>
 
@@ -294,7 +295,7 @@ function PeerMatchPage() {
                   <div className="text-center py-12 text-muted-foreground">Loading supporters...</div>
                 ) : volunteers.length === 0 ? (
                   <Card className="p-8 text-center">
-                    <p className="text-muted-foreground">No verified supporters available for this topic right now.</p>
+                    <p className="text-muted-foreground">No supporters available for this topic right now.</p>
                     <Button variant="outline" className="mt-4 rounded-xl" onClick={() => setStep("issue")}>
                       Try Another Topic
                     </Button>
@@ -315,7 +316,7 @@ function PeerMatchPage() {
                             <div className="flex items-center gap-2">
                               <h3 className="font-display font-semibold">{vol.name}</h3>
                               <span className="inline-flex items-center gap-1 rounded-full bg-safe/10 px-2 py-0.5 text-xs text-safe">
-                                <Shield className="h-3 w-3" /> Verified
+                                <Shield className="h-3 w-3" /> Available
                               </span>
                             </div>
                             {vol.bio && (
@@ -516,7 +517,7 @@ function PeerMatchPage() {
           <div className="mt-16 grid grid-cols-1 sm:grid-cols-4 gap-6">
             {[
               { icon: Shield, title: "Anonymous", desc: "Your identity stays protected throughout" },
-              { icon: Users, title: "Verified Peers", desc: "All volunteers are trained & background-checked" },
+              { icon: Users, title: "Peer Supporters", desc: "Connect with active volunteers who are available to help" },
               { icon: Clock, title: "30-Min Sessions", desc: "Focused, structured support conversations" },
               { icon: Heart, title: "You're Not Alone", desc: "1000s of students have found support here" },
             ].map((item) => (

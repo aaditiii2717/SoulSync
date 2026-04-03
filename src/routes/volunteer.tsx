@@ -160,9 +160,9 @@ function VolunteerPage() {
         {/* How it works */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
           {[
-            { icon: BookOpen, title: "Get Trained", desc: "Complete our CBT-based peer support training module" },
-            { icon: Shield, title: "Get Verified", desc: "Background check ensures safety for all users" },
-            { icon: MessageCircle, title: "Start Helping", desc: "Students book your slots anonymously" },
+            { icon: BookOpen, title: "Set Up Profile", desc: "Share what topics you can support and how you want to help" },
+            { icon: Shield, title: "Go Live", desc: "Your volunteer profile becomes available as soon as you save it" },
+            { icon: MessageCircle, title: "Start Helping", desc: "Students can book your open slots anonymously" },
           ].map((step, i) => (
             <motion.div
               key={step.title}
@@ -303,8 +303,7 @@ function VolunteerPage() {
             </div>
             <h2 className="font-display text-xl font-semibold">Application Received!</h2>
             <p className="mt-2 text-muted-foreground max-w-sm mx-auto">
-              Thank you for volunteering. Once verified, students will be able to book sessions with you.
-              Your available time slots have been saved.
+              Thank you for volunteering. Your profile is now live and students can book the time slots you saved.
             </p>
           </motion.div>
         )}
@@ -312,7 +311,7 @@ function VolunteerPage() {
         {/* Trust badges */}
         <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { icon: Shield, label: "Background Verified" },
+            { icon: Shield, label: "Profile Live" },
             { icon: Heart, label: "Empathy Trained" },
             { icon: Clock, label: "Flexible Schedule" },
             { icon: CheckCircle, label: "Certificate Provided" },
