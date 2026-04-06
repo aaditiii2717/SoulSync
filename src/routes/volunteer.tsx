@@ -54,7 +54,7 @@ function VolunteerPage() {
     "General Support",
   ];
 
-  const languageOptions = ["English", "Hindi", "Spanish", "French", "Other"];
+  const languageOptions = ["English", "Hindi", "Tamil", "Telugu", "Other"];
 
   const toggleExpertise = (opt: string) => {
     setExpertise((prev) => (prev.includes(opt) ? prev.filter((e) => e !== opt) : [...prev, opt]));
