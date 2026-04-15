@@ -17,17 +17,17 @@ interface Message {
 }
 
 const quickPrompts = [
-  "I'm feeling anxious and don't know why",
-  "I can't sleep because of stress",
-  "I feel really lonely lately",
-  "Help me with a breathing exercise",
+  "I had a really nice win today ✨",
+  "Just wanted to share something that made me smile",
+  "I'm feeling pretty grounded today",
+  "Let's talk about something positive!",
 ];
 
 const friendLikeGreetings = [
-  "Hey! I was just thinking about you. How's your day going so far? ☕",
-  "Hi friend! Glad you're here. Tell me, what's been on your mind lately? I'm all ears.",
-  "Hey there! Ready for our chat? I've been looking forward to hearing how you've been doing.",
-  "Hey 👋 Just wanted to check in. How was your day? I'm here if you want to talk about anything, big or small.",
+  "Hey! I was just thinking about you. How was your day? 🌿",
+  "Hi friend! Glad you're here. Tell me, what's been the best part of your day so far? I'm all ears.",
+  "Hey there! Ready for our chat? I've been looking forward to hearing how your day has been going.",
+  "Hey 👋 Just wanted to check in. How was your day? Honestly, I'm just here to listen to whatever's on your mind.",
 ];
 
 export function ChatInterface() {

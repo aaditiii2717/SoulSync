@@ -2,24 +2,24 @@ import { motion } from "framer-motion";
 
 const floatingPanels = [
   {
-    className: "left-[6%] top-[15%] hidden xl:block",
-    transform: "rotateY(28deg) rotateX(18deg) translateZ(80px)",
+    className: "left-[2%] top-[12%] hidden xl:block",
+    transform: "rotateY(25deg) rotateX(15deg) translateZ(40px)",
     eyebrow: "Breathing Room",
     title: "You can start small.",
     copy: "A single honest sentence is enough to begin a caring conversation.",
     duration: 8.5,
   },
   {
-    className: "right-[8%] top-[24%] hidden 2xl:block",
-    transform: "rotateY(-30deg) rotateX(14deg) translateZ(120px)",
+    className: "right-[2%] top-[18%] hidden 2xl:block",
+    transform: "rotateY(-25deg) rotateX(12deg) translateZ(60px)",
     eyebrow: "Human Warmth",
     title: "Support can feel close.",
     copy: "Layered guidance and peer listening create a softer emotional landing.",
     duration: 9.5,
   },
   {
-    className: "left-[16%] bottom-[10%] hidden xl:block",
-    transform: "rotateY(22deg) rotateX(-10deg) translateZ(50px)",
+    className: "left-[8%] bottom-[15%] hidden xl:block",
+    transform: "rotateY(18deg) rotateX(-8deg) translateZ(30px)",
     eyebrow: "Gentle Pace",
     title: "No pressure to explain everything.",
     copy: "The interface helps people breathe, reflect, and choose their next step slowly.",
@@ -37,12 +37,12 @@ const lightDots = [
 
 export function EmotionalBackdrop() {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden select-none">
-      <div className="backdrop-mesh absolute inset-0" />
-      <div className="absolute left-1/2 top-[-12rem] h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-primary/10 blur-[130px]" />
-      <div className="absolute -left-28 top-[8rem] h-[26rem] w-[26rem] rounded-full bg-warm/14 blur-[120px]" />
-      <div className="absolute -right-24 top-[16rem] h-[28rem] w-[28rem] rounded-full bg-calm/12 blur-[130px]" />
-      <div className="absolute bottom-[-10rem] left-1/2 h-[30rem] w-[30rem] -translate-x-1/2 rounded-full bg-white/45 blur-[140px]" />
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[120vh] overflow-hidden select-none z-0">
+      <div className="backdrop-mesh absolute inset-0 opacity-80" />
+      <div className="absolute left-1/2 top-[-10rem] h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-primary/8 blur-[120px]" />
+      <div className="absolute -left-28 top-[6rem] h-[24rem] w-[24rem] rounded-full bg-warm/10 blur-[110px]" />
+      <div className="absolute -right-24 top-[14rem] h-[26rem] w-[26rem] rounded-full bg-calm/8 blur-[120px]" />
+      <div className="absolute bottom-[-8rem] left-1/2 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-white/40 blur-[130px]" />
 
       <div className="absolute left-1/2 top-20 hidden h-[34rem] w-[34rem] -translate-x-1/2 xl:block perspective-deep">
         <motion.div
@@ -69,14 +69,14 @@ export function EmotionalBackdrop() {
           animate={{ y: [0, -18, 0], rotateZ: [-1, 1, -1] }}
           transition={{ repeat: Infinity, duration: panel.duration, ease: "easeInOut" }}
         >
-          <div className="scene-panel w-64 rounded-[1.6rem] p-4" style={{ transform: panel.transform }}>
-            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-primary/70">
+          <div className="scene-panel w-64 rounded-[1.6rem] p-4 opacity-90 shadow-lg" style={{ transform: panel.transform }}>
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-primary/60">
               {panel.eyebrow}
             </p>
-            <h3 className="mt-3 font-display text-2xl font-semibold leading-tight text-foreground">
+            <h3 className="mt-3 font-display text-2xl font-semibold leading-tight text-foreground/90">
               {panel.title}
             </h3>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">{panel.copy}</p>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground/80">{panel.copy}</p>
           </div>
         </motion.div>
       ))}

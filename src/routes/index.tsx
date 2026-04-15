@@ -18,19 +18,23 @@ export const Route = createFileRoute("/")({
 
 function LandingPage() {
   return (
-    <div className="relative isolate min-h-screen overflow-hidden">
+    <div className="relative isolate min-h-screen bg-background overflow-x-hidden">
       <EmotionalBackdrop />
-      <div className="relative z-10">
+      <div className="relative z-10 bg-background/20 backdrop-blur-[2px]">
         <Navbar />
         <HeroSection />
-        <FeaturesSection />
-        <NGOImpactSection />
-        <WorkflowSection />
-        <ImpactDashboard />
-        <SafetyGovernance />
-        <ComparisonSection />
-        <CTASection />
-        <Footer />
+        <div className="relative z-20 bg-background/60 backdrop-blur-sm">
+          <FeaturesSection />
+          <NGOImpactSection />
+          <WorkflowSection />
+        </div>
+        <div className="relative z-10">
+          <ImpactDashboard />
+          <SafetyGovernance />
+          <ComparisonSection />
+          <CTASection />
+          <Footer />
+        </div>
       </div>
     </div>
   );
