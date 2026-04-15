@@ -102,7 +102,7 @@ export function FeaturesSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.08, duration: 0.5 }}
-              className={`group surface-card rounded-[2rem] p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_36px_80px_-50px_oklch(0.4_0.08_35_/_0.55)] ${feature.span}`}
+              className={`group surface-card rounded-[2rem] p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_36px_80px_-50px_oklch(0.4_0.08_145_/_0.55)] ${feature.span}`}
             >
               <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${feature.color}`}>
                 <feature.icon className="h-5 w-5" />

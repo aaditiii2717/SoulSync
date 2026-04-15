@@ -62,7 +62,7 @@ export function ComparisonSection() {
             initial={{ opacity: 0, x: 18 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="gradient-hero rounded-[2rem] p-[1px] shadow-[0_32px_90px_-52px_oklch(0.45_0.12_35_/_0.75)]"
+            className="gradient-hero rounded-[2rem] p-[1px] shadow-[0_32px_90px_-52px_oklch(0.45_0.12_145_/_0.75)]"
           >
             <div className="h-full rounded-[1.95rem] bg-background/90 p-8 backdrop-blur-xl">
               <div className="inline-flex items-center rounded-full bg-primary/12 px-4 py-2 text-sm font-medium text-primary">

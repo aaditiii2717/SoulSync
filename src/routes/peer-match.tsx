@@ -11,6 +11,9 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { toast } from "sonner";
+
+import { sendChatMessage, updateChatMemory, generateVolunteerBriefing, updatePostSessionMemory } from "@/utils/chat.functions";
 
 export const Route = createFileRoute("/peer-match")({
   component: PeerMatchPage,
@@ -25,7 +28,7 @@ const issueTypes = [
   { id: "general", label: "Just Need to Talk", icon: "💬" },
 ];
 
-type BookingStep = "issue" | "volunteers" | "slots" | "confirm" | "booked";
+type BookingStep = "issue" | "survey" | "volunteers" | "slots" | "confirm" | "booked" | "feedback";
 
 interface Volunteer {
   id: string;
@@ -55,6 +58,33 @@ function PeerMatchPage() {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [showCrisis, setShowCrisis] = useState(false);
+  const [meetingToken, setMeetingToken] = useState("");
+  const [callType, setCallType] = useState<"video" | "voice">("voice");
+  const [surveyAnswers, setSurveyAnswers] = useState<Record<string, any>>({});
+  const [currentSurveyIdx, setCurrentSurveyIdx] = useState(0);
+  const [hasJoined, setHasJoined] = useState(false);
+  const [moodRating, setMoodRating] = useState<number | null>(null);
+  const [feedbackNotes, setFeedbackNotes] = useState("");
+  const [primaryVolunteerId, setPrimaryVolunteerId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      const aliasId = localStorage.getItem("soulSync_alias_id");
+      if (!aliasId) return;
+
+      const { data } = await supabase
+        .from("session_bookings")
+        .select("volunteer_id")
+        .eq("student_alias_id", aliasId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (data && data[0]) {
+        setPrimaryVolunteerId(data[0].volunteer_id);
+      }
+    };
+    fetchHistory();
+  }, []);
 
   // Fetch volunteers matching the issue
   const fetchVolunteers = async (issueLabel: string) => {
@@ -87,8 +117,85 @@ function PeerMatchPage() {
     setSelectedIssue(issueId);
     const issue = issueTypes.find((i) => i.id === issueId);
     if (issue) fetchVolunteers(issue.label);
-    setStep("volunteers");
+    setStep("survey");
   };
+
+  const surveyQuestions = [
+    { 
+      id: "intensity", 
+      q: "How heavy is your heart today?", 
+      options: ["1 - Very Light", "3 - Slightly Heavy", "5 - Very Heavy", "7 - Overwhelmed"] 
+    },
+    { 
+      id: "need", 
+      q: "What do you need most right now?", 
+      options: ["A good listener", "Practical advice", "Just a distraction", "Connection"] 
+    },
+    { 
+      id: "style", 
+      q: "What's your preferred approach?", 
+      options: ["Empathetic & Soft", "Direct & Practical", "Casual & Friendly"] 
+    },
+    { 
+      id: "peer_type", 
+      q: "Do you prefer a peer who is a...", 
+      options: ["Fellow Student", "Working Professional", "Senior Student", "No preference"] 
+    },
+    { 
+      id: "language", 
+      q: "Preferred language for chat?", 
+      options: ["English", "Hindi", "Tamil/Telugu", "Mixed"] 
+    },
+    { 
+      id: "depth", 
+      q: "Today, do you want to...", 
+      options: ["Keep it light", "Deep dive into feelings", "Solve a problem"] 
+    },
+    { 
+      id: "panic", 
+      q: "Are you feeling overwhelmed to a point of panic?", 
+      options: ["Not at all", "A little bit", "Yes, significantly"] 
+    },
+    { 
+      id: "priority", 
+      q: "What's most important in your match?", 
+      options: ["Shared Experience", "Expertise Level", "Immediate Availability"] 
+    }
+  ];
+
+  const handleSurveyOption = (option: string) => {
+    const questionId = surveyQuestions[currentSurveyIdx].id;
+    setSurveyAnswers(prev => ({ ...prev, [questionId]: option }));
+    
+    if (currentSurveyIdx < surveyQuestions.length - 1) {
+      setCurrentSurveyIdx(prev => prev + 1);
+    } else {
+      setStep("volunteers");
+      // Background generate the briefing
+      const chatReportStr = sessionStorage.getItem("soulSync_chatReport");
+      if (chatReportStr) {
+        const chatReport = JSON.parse(chatReportStr);
+        generateVolunteerBriefing({ 
+          data: { chatReport, surveyAnswers: { ...surveyAnswers, [questionId]: option } } 
+        }).then(({ briefing }) => {
+          sessionStorage.setItem("soulSync_handoffBriefing", briefing);
+        });
+      }
+    }
+  };
+
+  // Improved volunteer matching logic
+  const sortedVolunteers = [...volunteers].sort((a, b) => {
+    // Priority sorting: Primary Volunteer first, then Match Score
+    if (a.id === primaryVolunteerId) scoreA += 100;
+    if (b.id === primaryVolunteerId) scoreB += 100;
+    
+    // Simple matching heuristic
+    if (surveyAnswers.style?.includes("Direct") && a.bio?.toLowerCase().includes("practical")) scoreA += 2;
+    if (surveyAnswers.style?.includes("Empathetic") && a.bio?.toLowerCase().includes("empathy")) scoreA += 2;
+    
+    return scoreB - scoreA;
+  });
 
   const handleVolunteerSelect = (vol: Volunteer) => {
     setSelectedVolunteer(vol);
@@ -111,16 +218,58 @@ function PeerMatchPage() {
       .update({ is_booked: true })
       .eq("id", selectedSlot.id);
 
+    const newToken = crypto.randomUUID().slice(0, 8);
+    const aliasId = localStorage.getItem("soulSync_alias_id");
+
     // Create booking
     await supabase.from("session_bookings").insert({
       time_slot_id: selectedSlot.id,
       anonymous_name: anonName.trim() || "Anonymous",
+      student_alias_id: aliasId,
       issue_type: selectedIssue,
       notes: notes.trim() || null,
+      meeting_token: newToken,
+      handoff_briefing: sessionStorage.getItem("soulSync_handoffBriefing"),
     });
 
+    setMeetingToken(newToken);
     setLoading(false);
     setStep("booked");
+  };
+
+  const handleFeedback = async () => {
+    if (moodRating === null) return;
+    setLoading(true);
+
+    // Update booking with feedback
+    await supabase
+      .from("session_bookings")
+      .update({
+        mood_after: moodRating.toString(),
+        notes: feedbackNotes.trim() ? notes + "\n\nUser Feedback: " + feedbackNotes : notes
+      })
+      .eq("meeting_token", meetingToken);
+
+    // AI POST-SESSION PERSISTENCE
+    const briefing = sessionStorage.getItem("soulSync_handoffBriefing") || "";
+    const aliasId = localStorage.getItem("soulSync_alias_id");
+    
+    if (aliasId) {
+      updatePostSessionMemory({ 
+        data: { 
+          aliasId, 
+          briefing, 
+          feedback: feedbackNotes || "Session completed successfully." 
+        } 
+      }).catch(console.error);
+    }
+
+    setLoading(false);
+    setStep("booked"); // Return to confirmation screen or dashboard
+    toast.success("Thank you for your feedback! Your journey is being safely recorded.");
+    setTimeout(() => {
+        window.location.href = "/";
+    }, 2000);
   };
 
   const resetFlow = () => {
@@ -130,7 +279,34 @@ function PeerMatchPage() {
     setSelectedSlot(null);
     setAnonName("");
     setNotes("");
+    setHasJoined(false);
+    setMoodRating(null);
+    setFeedbackNotes("");
+    sessionStorage.removeItem("soulSync_chatReport");
   };
+
+  // Load chat report from session storage on mount
+  useEffect(() => {
+    const savedReport = sessionStorage.getItem("soulSync_chatReport");
+    if (savedReport) {
+      try {
+        const report = JSON.parse(savedReport);
+        if (report.summary) {
+          setNotes(`--- AI Supported Chat Report ---\n${report.summary}\n\nChat Preview:\n${report.chatPreview}\n-----------------------------`);
+          
+          // Try to map top emotion to issue type
+          const topEmotion = report.emotions?.[0]?.toLowerCase();
+          if (topEmotion === "nervousness" || topEmotion === "fear" || topEmotion === "anxiety") {
+            setSelectedIssue("anxiety");
+          } else if (topEmotion === "loneliness" || topEmotion === "sadness") {
+            setSelectedIssue("loneliness");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to parse chat report", err);
+      }
+    }
+  }, []);
 
   const currentIssue = issueTypes.find((i) => i.id === selectedIssue);
 
@@ -236,7 +412,7 @@ function PeerMatchPage() {
               { key: "slots", label: "Time Slot" },
               { key: "confirm", label: "Confirm" },
             ].map((s, i) => {
-              const steps: BookingStep[] = ["issue", "volunteers", "slots", "confirm", "booked"];
+              const steps: BookingStep[] = ["issue", "volunteers", "slots", "confirm", "booked", "feedback"];
               const currentIdx = steps.indexOf(step);
               const stepIdx = steps.indexOf(s.key as BookingStep);
               const isActive = stepIdx <= currentIdx;
@@ -280,7 +456,57 @@ function PeerMatchPage() {
               </motion.div>
             )}
 
-            {/* Step 2: Volunteer Availability Board */}
+            {/* Step 2: Matching Survey */}
+            {step === "survey" && (
+              <motion.div key="survey" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                <Card className="p-8 bg-white shadow-xl rounded-[2.5rem] border-none">
+                  <div className="mb-8">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-3 py-1 rounded-full">
+                        Matching Survey
+                      </span>
+                      <span className="text-xs font-bold text-slate-400">
+                        {currentSurveyIdx + 1} / {surveyQuestions.length}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <motion.div 
+                        className="h-full bg-primary" 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${((currentSurveyIdx + 1) / surveyQuestions.length) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <h2 className="text-2xl font-display font-black mb-8 leading-tight">
+                    {surveyQuestions[currentSurveyIdx].q}
+                  </h2>
+
+                  <div className="grid gap-3">
+                    {surveyQuestions[currentSurveyIdx].options.map((opt) => (
+                      <button
+                        key={opt}
+                        onClick={() => handleSurveyOption(opt)}
+                        className="w-full p-5 rounded-2xl border-2 border-slate-100 text-left font-bold transition-all hover:border-primary/40 hover:bg-primary/5 active:scale-[0.98]"
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <div className="mt-8 flex justify-center">
+                    <Button 
+                      variant="ghost" 
+                      className="text-xs text-slate-400 font-bold hover:bg-transparent"
+                      onClick={() => currentSurveyIdx > 0 && setCurrentSurveyIdx(prev => prev - 1)}
+                    >
+                      Back to previous
+                    </Button>
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+
             {step === "volunteers" && (
               <motion.div key="volunteers" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                 <div className="flex items-center justify-between mb-4">
@@ -293,7 +519,7 @@ function PeerMatchPage() {
                 </div>
                 {loading ? (
                   <div className="text-center py-12 text-muted-foreground">Loading supporters...</div>
-                ) : volunteers.length === 0 ? (
+                ) : sortedVolunteers.length === 0 ? (
                   <Card className="p-8 text-center">
                     <p className="text-muted-foreground">No supporters available for this topic right now.</p>
                     <Button variant="outline" className="mt-4 rounded-xl" onClick={() => setStep("issue")}>
@@ -302,7 +528,7 @@ function PeerMatchPage() {
                   </Card>
                 ) : (
                   <div className="space-y-3">
-                    {volunteers.map((vol) => (
+                    {sortedVolunteers.map((vol, index) => (
                       <Card
                         key={vol.id}
                         className="p-5 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all"
@@ -497,17 +723,107 @@ function PeerMatchPage() {
                       🕐 {selectedSlot?.start_time.slice(0, 5)} – {selectedSlot?.end_time.slice(0, 5)}
                     </p>
                   </div>
+                  
+                  {/* Call Preference */}
+                  <div className="mt-6 p-4 border rounded-2xl bg-slate-50">
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Call Preference</p>
+                    <div className="flex gap-2">
+                       <button 
+                        onClick={() => setCallType("voice")}
+                        className={`flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all ${callType === 'voice' ? 'bg-primary border-primary text-white' : 'bg-white border-slate-100 text-slate-600'}`}
+                       >
+                         Audio Only
+                       </button>
+                       <button 
+                        onClick={() => setCallType("video")}
+                        className={`flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all ${callType === 'video' ? 'bg-primary border-primary text-white' : 'bg-white border-slate-100 text-slate-600'}`}
+                       >
+                         Video Call
+                       </button>
+                    </div>
+                  </div>
+
                   <p className="mt-4 text-xs text-muted-foreground">
-                    You&apos;ll be connected via the chat at the scheduled time. No personal info shared.
+                    Your room is ready. Everything is private and anonymous.
                   </p>
-                  <div className="mt-6 flex gap-3 justify-center">
-                    <Button variant="hero" className="rounded-xl" onClick={() => window.location.href = "/chat"}>
-                      Go to Chat
-                    </Button>
+                  <div className="mt-6 flex flex-col gap-3 justify-center">
+                    {!hasJoined ? (
+                      <Button 
+                        variant="hero" 
+                        className="rounded-xl h-14 text-lg shadow-xl" 
+                        onClick={() => {
+                          setHasJoined(true);
+                          window.open(`https://meet.jit.si/SoulSync-Session-${meetingToken}#config.startWithVideoMuted=${callType === 'voice'}&config.startWithAudioMuted=false`, '_blank');
+                        }}
+                      >
+                        <Phone className="h-5 w-5 mr-2" /> Start Anonymous Call
+                      </Button>
+                    ) : (
+                      <div className="space-y-3">
+                        <Button 
+                          variant="hero" 
+                          className="w-full rounded-xl bg-orange-500 hover:bg-orange-600 h-14 text-lg" 
+                          onClick={() => setStep("feedback")}
+                        >
+                          <CheckCircle className="h-5 w-5 mr-2" /> I've Finished my Session
+                        </Button>
+                        <p className="text-[10px] text-muted-foreground italic">
+                          Session in progress in a separate tab. Click above when done.
+                        </p>
+                      </div>
+                    )}
                     <Button variant="outline" className="rounded-xl" onClick={resetFlow}>
                       Book Another
                     </Button>
                   </div>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Step 6: Feedback */}
+            {step === "feedback" && (
+              <motion.div key="feedback" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+                <Card className="p-8 text-center bg-white shadow-xl rounded-[2.5rem]">
+                   <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Heart className="h-8 w-8 text-primary" />
+                  </div>
+                  <h2 className="text-2xl font-display font-bold mb-2">How do you feel now?</h2>
+                  <p className="text-sm text-slate-500 mb-8">Your feedback helps us measure the impact of our peer supporters.</p>
+                  
+                  <div className="flex justify-center gap-3 mb-8">
+                    {[1, 2, 3, 4, 5].map((num) => (
+                      <button
+                        key={num}
+                        onClick={() => setMoodRating(num)}
+                        className={`h-12 w-12 rounded-xl border-2 transition-all font-bold flex items-center justify-center ${
+                          moodRating === num 
+                            ? "border-primary bg-primary text-white shadow-lg scale-110" 
+                            : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
+                        }`}
+                      >
+                        {num === 1 ? "😞" : num === 2 ? "😕" : num === 3 ? "😐" : num === 4 ? "🙂" : "😊"}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="text-left mb-6">
+                    <label className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Additional Notes</label>
+                    <textarea 
+                      value={feedbackNotes}
+                      onChange={(e) => setFeedbackNotes(e.target.value)}
+                      placeholder="Optional: How was your experience?"
+                      className="w-full mt-2 rounded-2xl border-2 border-slate-100 p-4 text-sm focus:border-primary/50 outline-none resize-none h-24"
+                    />
+                  </div>
+
+                  <Button 
+                    variant="hero" 
+                    className="w-full h-14 rounded-2xl text-lg font-bold shadow-xl"
+                    disabled={moodRating === null || loading}
+                    onClick={handleFeedback}
+                  >
+                    {loading ? "Saving..." : "Submit Feedback"}
+                  </Button>
                 </Card>
               </motion.div>
             )}

@@ -1,120 +1,85 @@
-# SoulSync / Empathy Engine
+# SoulSync Technical Showcase 🛠️ (Hackathon Submission)
 
-> "You're not alone. We're here to listen."
+A professional Mental Wellness Ecosystem built using Google Technology Stack.
 
-A safe, anonymous, and AI-powered platform for emotional support, powered by Cognitive Behavioral Therapy (CBT) techniques, trained peer volunteers, and professional resources. 
+## 1. Core Tech Stack
+-   **AI & ML Layer**:
+    -   **Google Gemini 2.5 Flash**: Dialogue, Intelligence Handoff Synthesis, and Post-Session Summarization.
+    -   **Perspective API**: Real-time toxicity filtering for absolute safety.
+    -   **Local RoBERTa Models**: Sentiment and emotion detection.
+-   **Frontend Architecture**:
+    -   **TanStack Start / Router**: Progressive, type-safe full-stack routing.
+    -   **Framer Motion**: Premium emotional animations for high-fidelity UX.
+    -   **Recharts**: Visualizing the "Healing Curve" and NGO impact stats.
+-   **Backend & Identity**:
+    -   **Supabase / Postgres**: RLS-secured autonomous data layer.
+    -   **Custom Identity Hook**: `useAnonymousIdentity` for account-less persistence.
 
-## 🌟 Overview
+## 2. Global Identity & Anonymity
+SoulSync protects students through a **Zero-Trace Identity Pipeline**:
+-   **Alias ID**: UUID stored exclusively in `localStorage`.
+-   **Database Linkage**: All records (moods, sessions, memory) are linked to the Alias UUID, ensuring no university or campus link to real identities.
 
-Empathy Engine (SoulSync) is designed to provide immediate, judgment-free support to anyone navigating anxiety, stress, or everyday challenges. The platform requires **no sign-up**, ensuring 100% anonymity and privacy. It connects users seamlessly to either friendly AI-guided therapeutic support, human peer volunteers, or community resources based on their immediate needs.
+## 3. Database Architecture (Supabase Schema)
 
-## ✨ Key Features
+### `student_profiles`
+| Column | Type | Purpose |
+| :--- | :--- | :--- |
+| `alias_id` | UUID (PK) | Primary anonymous identifier |
+| `memory_context` | TEXT | AI-synthesized bullet points of user history |
+| `primary_volunteer_id`| UUID | Linked volunteer for continuity |
 
-- **🛡️ 100% Anonymous & Secure:** No accounts, no sign-ups. Your identity is always protected.
-- **💬 AI-Guided & CBT-Based Chat:** Dynamic conversational interfaces delivering evidence-backed Cognitive Behavioral Therapy guidance. 
-- **👥 Peer Matching:** Get matched instantly with trained peer volunteers for a real human connection when you need it most.
-- **🧭 Mood Tracking & Check-ins:** Regularly assess and log your emotional state.
-- **📚 Community Q&A & Resources:** Browse helpful articles, find professional resources, and connect over shared experiences securely.
-- **🤝 Volunteer Portal:** Dedicated workflows for trained volunteers to join and support the community.
+### `session_bookings` (The CRM Layer)
+| Column | Type | Purpose |
+| :--- | :--- | :--- |
+| `handoff_briefing` | TEXT | Intelligent AI briefing for the volunteer |
+| `ai_session_summary` | TEXT | Summary added after the session ends |
+| `meeting_token` | TEXT | Random token for Jitsi rooms |
+| `mood_before/after` | TEXT | 1-10 sentiment tracking for Impact Dashboard |
 
-## 🛠️ Tech Stack
+## 4. AI Server Functions (API Testing Payloads)
+The following functions can be tested via the `/utils/chat.functions.ts` server entry points.
 
-This project is built using a modern, scalable web stack:
-
-**Frontend Ecosystem**
-* **Framework:** [React 19](https://react.dev/) with [Vite](https://vitejs.dev/)
-* **Routing:** [TanStack Router](https://tanstack.com/router/latest)
-* **Styling:** [Tailwind CSS v4](https://tailwindcss.com/) & [Framer Motion](https://www.framer.com/motion/) for animations.
-* **Component Library:** [Radix UI](https://www.radix-ui.com/) and [shadcn/ui](https://ui.shadcn.com/) (configured via `components.json`).
-* **State Management / Data Fetching:** [TanStack React Query](https://tanstack.com/query/latest)
-* **Form Handling & Validation:** [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/)
-* **Icons:** [Lucide React](https://lucide.dev/)
-
-**Backend & Infrastructure**
-* **Database & Auth:** [Supabase](https://supabase.com/)
-* **Deployment & Edge Computing:** Built for edge deployment, integrated with Cloudflare Workers via [Wrangler](https://developers.cloudflare.com/workers/wrangler/).
-
-## 📂 Project Structure
-
-```text
-empathy-engine/
-├── .tanstack/            # TanStack generated files
-├── .wrangler/            # Cloudflare Wrangler specific configs
-├── public/               # Static assets
-├── src/                  # Main application source code
-│   ├── components/       # Reusable UI components & sections
-│   ├── hooks/            # Custom React hooks
-│   ├── integrations/     # Third-party integrations (Supabase etc.)
-│   ├── lib/              # Utility functions and library wrappers
-│   ├── routes/           # Application routes (pages) managed by TanStack Router
-│   ├── utils/            # Helper functions
-│   ├── styles.css        # Global CSS variables and Tailwind imports
-│   └── router.tsx        # Main application router instance
-├── supabase/             # Supabase configuration & migrations
-├── package.json          # Project dependencies & scripts
-├── vite.config.ts        # Vite build configuration
-└── eslint.config.js      # Linting configuration
+### `sendChatMessage` (Dialogue)
+```json
+{
+  "messages": [{"role": "user", "content": "I'm overwhelmed by my thesis."}],
+  "aliasId": "8f8e-..."
+}
 ```
 
-## 🚀 Getting Started
-
-### Prerequisites
-
-* [Node.js](https://nodejs.org/en/) (v18 or higher recommended)
-* Configuration for [Supabase](https://supabase.com/)
-
-### 1. Clone & Install
-Clone the repository, then navigate to the project root and install the necessary dependencies:
-
-```bash
-npm install
-# or
-bun install
+### `generateVolunteerBriefing` (Intelligent Handoff)
+```json
+{
+  "chatReport": {
+    "emotions": [{"label": "anxiety", "score": 0.9}],
+    "summary": "Student is struggling with academic pressure."
+  },
+  "surveyAnswers": {
+    "intensity": "High",
+    "priority": "Shared Experience"
+  }
+}
 ```
 
-### 2. Environment Variables
+## 5. Route Map
+-   `/`: Landing Page (Movement Vision, Live Ticker, Impact Dashboard).
+-   `/chat`: The AI Companion Interface (Infinite Memory Chat).
+-   `/peer-match`: Anonymous Peer Matching (8-Question Psych Survey).
+-   `/volunteer/dashboard`: Supporter Hub (AI Briefing access and Session Reporting).
+-   `/admin/command-center`: **HQ Hub** (Reserved for 3 Super-Admins to oversee global metrics, manage volunteers, and audit briefings).
+-   `/partners`: NGO Philanthropic Hub.
 
-Create a `.env` file in the root directory based on the expected environment variables for Supabase and Cloudflare:
-```env
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-# ... add any other specific secrets required
-```
+## 6. Admin Governance (3 Super-Admins)
+We have implemented a dual-layer security model:
+1.  **Peer Volunteers**: Verified individuals who handle student reports and sessions.
+2.  **Super-Admins**: A group of exactly 3 authorized managers who govern the entire registry, verify CVs, and monitor platform performance in the **Command Center**.
 
-### 3. Start the Development Server
+## 7. Setup & Installation
+1.  **Dependencies**: `bun install`
+2.  **Environment**: Create `.env` with `GEMINI_API_KEY` and `VITE_SUPABASE_URL`.
+3.  **Migrations**: Run SQL files in `/supabase/migrations/` (01_Master -> 03_Governance).
+4.  **Dev Server**: `bun dev`
 
-```bash
-npm run dev
-# or
-bun run dev
-```
-
-The app will typically run on `http://localhost:5173`.
-
-### 4. Build for Production
-
-To create an optimized production build:
-
-```bash
-npm run build
-```
-
-## 📦 Scripts
-
-- `npm run dev`: Starts the local Vite development server.
-- `npm run build`: Bundles the application for production deployment.
-- `npm run build:dev`: Compiles a build explicitly intended for a staging/development environment.
-- `npm run preview`: Bootstraps a local server to preview the production build.
-- `npm run lint`: Analyzes the codebase for potential linting issues using ESLint.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details or reach out to the repository owner.
+---
+**Build for the Google Solution Challenge 2026**

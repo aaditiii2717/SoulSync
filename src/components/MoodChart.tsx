@@ -45,8 +45,8 @@ export function MoodChart({ data = demoData }: { data?: MoodEntry[] }) {
         <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="moodGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="oklch(0.55 0.12 175)" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="oklch(0.55 0.12 175)" stopOpacity={0} />
+              <stop offset="5%" stopColor="oklch(0.55 0.08 145)" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="oklch(0.55 0.08 145)" stopOpacity={0} />
             </linearGradient>
           </defs>
           <XAxis dataKey="date" axisLine={false} tickLine={false} className="text-xs" />
@@ -63,7 +63,7 @@ export function MoodChart({ data = demoData }: { data?: MoodEntry[] }) {
             formatter={(value: number) => [moodLabels[value], "Mood"]}
             contentStyle={{
               borderRadius: "12px",
-              border: "1px solid oklch(0.92 0.015 175)",
+              border: "1px solid oklch(0.91 0.02 145)",
               background: "white",
               fontSize: "13px",
             }}
@@ -71,7 +71,7 @@ export function MoodChart({ data = demoData }: { data?: MoodEntry[] }) {
           <Area
             type="monotone"
             dataKey="value"
-            stroke="oklch(0.55 0.12 175)"
+            stroke="oklch(0.55 0.08 145)"
             strokeWidth={3}
             fill="url(#moodGradient)"
           />

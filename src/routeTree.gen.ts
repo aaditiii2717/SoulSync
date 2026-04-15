@@ -12,11 +12,15 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VolunteerRouteImport } from './routes/volunteer'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as PeerMatchRouteImport } from './routes/peer-match'
+import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as MoodTrackerRouteImport } from './routes/mood-tracker'
 import { Route as CommunityQnaRouteImport } from './routes/community-qna'
 import { Route as CheckInRouteImport } from './routes/check-in'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VolunteerDashboardRouteImport } from './routes/volunteer/dashboard'
+import { Route as AdminVolunteersRouteImport } from './routes/admin/volunteers'
+import { Route as AdminCommandCenterRouteImport } from './routes/admin/command-center'
 
 const VolunteerRoute = VolunteerRouteImport.update({
   id: '/volunteer',
@@ -31,6 +35,11 @@ const ResourcesRoute = ResourcesRouteImport.update({
 const PeerMatchRoute = PeerMatchRouteImport.update({
   id: '/peer-match',
   path: '/peer-match',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnersRoute = PartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MoodTrackerRoute = MoodTrackerRouteImport.update({
@@ -58,6 +67,21 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VolunteerDashboardRoute = VolunteerDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => VolunteerRoute,
+} as any)
+const AdminVolunteersRoute = AdminVolunteersRouteImport.update({
+  id: '/admin/volunteers',
+  path: '/admin/volunteers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCommandCenterRoute = AdminCommandCenterRouteImport.update({
+  id: '/admin/command-center',
+  path: '/admin/command-center',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -65,9 +89,13 @@ export interface FileRoutesByFullPath {
   '/check-in': typeof CheckInRoute
   '/community-qna': typeof CommunityQnaRoute
   '/mood-tracker': typeof MoodTrackerRoute
+  '/partners': typeof PartnersRoute
   '/peer-match': typeof PeerMatchRoute
   '/resources': typeof ResourcesRoute
-  '/volunteer': typeof VolunteerRoute
+  '/volunteer': typeof VolunteerRouteWithChildren
+  '/admin/command-center': typeof AdminCommandCenterRoute
+  '/admin/volunteers': typeof AdminVolunteersRoute
+  '/volunteer/dashboard': typeof VolunteerDashboardRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,9 +103,13 @@ export interface FileRoutesByTo {
   '/check-in': typeof CheckInRoute
   '/community-qna': typeof CommunityQnaRoute
   '/mood-tracker': typeof MoodTrackerRoute
+  '/partners': typeof PartnersRoute
   '/peer-match': typeof PeerMatchRoute
   '/resources': typeof ResourcesRoute
-  '/volunteer': typeof VolunteerRoute
+  '/volunteer': typeof VolunteerRouteWithChildren
+  '/admin/command-center': typeof AdminCommandCenterRoute
+  '/admin/volunteers': typeof AdminVolunteersRoute
+  '/volunteer/dashboard': typeof VolunteerDashboardRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,9 +118,13 @@ export interface FileRoutesById {
   '/check-in': typeof CheckInRoute
   '/community-qna': typeof CommunityQnaRoute
   '/mood-tracker': typeof MoodTrackerRoute
+  '/partners': typeof PartnersRoute
   '/peer-match': typeof PeerMatchRoute
   '/resources': typeof ResourcesRoute
-  '/volunteer': typeof VolunteerRoute
+  '/volunteer': typeof VolunteerRouteWithChildren
+  '/admin/command-center': typeof AdminCommandCenterRoute
+  '/admin/volunteers': typeof AdminVolunteersRoute
+  '/volunteer/dashboard': typeof VolunteerDashboardRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -98,9 +134,13 @@ export interface FileRouteTypes {
     | '/check-in'
     | '/community-qna'
     | '/mood-tracker'
+    | '/partners'
     | '/peer-match'
     | '/resources'
     | '/volunteer'
+    | '/admin/command-center'
+    | '/admin/volunteers'
+    | '/volunteer/dashboard'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -108,9 +148,13 @@ export interface FileRouteTypes {
     | '/check-in'
     | '/community-qna'
     | '/mood-tracker'
+    | '/partners'
     | '/peer-match'
     | '/resources'
     | '/volunteer'
+    | '/admin/command-center'
+    | '/admin/volunteers'
+    | '/volunteer/dashboard'
   id:
     | '__root__'
     | '/'
@@ -118,9 +162,13 @@ export interface FileRouteTypes {
     | '/check-in'
     | '/community-qna'
     | '/mood-tracker'
+    | '/partners'
     | '/peer-match'
     | '/resources'
     | '/volunteer'
+    | '/admin/command-center'
+    | '/admin/volunteers'
+    | '/volunteer/dashboard'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -129,9 +177,12 @@ export interface RootRouteChildren {
   CheckInRoute: typeof CheckInRoute
   CommunityQnaRoute: typeof CommunityQnaRoute
   MoodTrackerRoute: typeof MoodTrackerRoute
+  PartnersRoute: typeof PartnersRoute
   PeerMatchRoute: typeof PeerMatchRoute
   ResourcesRoute: typeof ResourcesRoute
-  VolunteerRoute: typeof VolunteerRoute
+  VolunteerRoute: typeof VolunteerRouteWithChildren
+  AdminCommandCenterRoute: typeof AdminCommandCenterRoute
+  AdminVolunteersRoute: typeof AdminVolunteersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -155,6 +206,13 @@ declare module '@tanstack/react-router' {
       path: '/peer-match'
       fullPath: '/peer-match'
       preLoaderRoute: typeof PeerMatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partners': {
+      id: '/partners'
+      path: '/partners'
+      fullPath: '/partners'
+      preLoaderRoute: typeof PartnersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mood-tracker': {
@@ -192,8 +250,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/volunteer/dashboard': {
+      id: '/volunteer/dashboard'
+      path: '/dashboard'
+      fullPath: '/volunteer/dashboard'
+      preLoaderRoute: typeof VolunteerDashboardRouteImport
+      parentRoute: typeof VolunteerRoute
+    }
+    '/admin/volunteers': {
+      id: '/admin/volunteers'
+      path: '/admin/volunteers'
+      fullPath: '/admin/volunteers'
+      preLoaderRoute: typeof AdminVolunteersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/command-center': {
+      id: '/admin/command-center'
+      path: '/admin/command-center'
+      fullPath: '/admin/command-center'
+      preLoaderRoute: typeof AdminCommandCenterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
+
+interface VolunteerRouteChildren {
+  VolunteerDashboardRoute: typeof VolunteerDashboardRoute
+}
+
+const VolunteerRouteChildren: VolunteerRouteChildren = {
+  VolunteerDashboardRoute: VolunteerDashboardRoute,
+}
+
+const VolunteerRouteWithChildren = VolunteerRoute._addFileChildren(
+  VolunteerRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -201,9 +292,12 @@ const rootRouteChildren: RootRouteChildren = {
   CheckInRoute: CheckInRoute,
   CommunityQnaRoute: CommunityQnaRoute,
   MoodTrackerRoute: MoodTrackerRoute,
+  PartnersRoute: PartnersRoute,
   PeerMatchRoute: PeerMatchRoute,
   ResourcesRoute: ResourcesRoute,
-  VolunteerRoute: VolunteerRoute,
+  VolunteerRoute: VolunteerRouteWithChildren,
+  AdminCommandCenterRoute: AdminCommandCenterRoute,
+  AdminVolunteersRoute: AdminVolunteersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

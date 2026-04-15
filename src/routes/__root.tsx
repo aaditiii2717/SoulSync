@@ -89,6 +89,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+import { useAnonymousIdentity } from "../hooks/useAnonymousIdentity";
+
 function RootComponent() {
+  useAnonymousIdentity(); // Initialize anonymous identity on mount
   return <Outlet />;
 }

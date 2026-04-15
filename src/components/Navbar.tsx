@@ -20,6 +20,7 @@ const exploreLinks = [
   { to: "/check-in", label: "My Check-In", desc: "How are you feeling?", icon: ClipboardCheck },
   { to: "/chat", label: "Talk to Someone", desc: "Safe, anonymous AI support", icon: MessageCircleHeart },
   { to: "/peer-match", label: "Peer Support", desc: "Connect with a trained volunteer", icon: Users },
+  { to: "/partners", label: "NGO Partners", desc: "Our network of professional help", icon: HeartHandshake },
   { to: "/mood-tracker", label: "Mood Journal", desc: "Track your emotional journey", icon: TrendingUp },
   { to: "/community-qna", label: "Community Q&A", desc: "You are not alone in this", icon: HelpCircle },
   { to: "/resources", label: "Self-Help Library", desc: "Guides and coping tools", icon: BookOpen },
@@ -54,7 +55,7 @@ export function Navbar() {
         <div className="glass-card rounded-[1.75rem] px-4 sm:px-6">
           <div className="flex min-h-[4.5rem] min-w-0 items-center justify-between gap-3">
             <Link to="/" className="flex min-w-0 flex-1 items-center gap-3 md:flex-none">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl gradient-wellness shadow-[0_18px_36px_-22px_oklch(0.45_0.12_34_/_0.9)] sm:h-11 sm:w-11">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl gradient-wellness shadow-[0_18px_36px_-22px_oklch(0.45_0.12_145_/_0.9)] sm:h-11 sm:w-11">
                 <HeartHandshake className="h-5 w-5 text-primary-foreground" />
               </div>
               <div className="min-w-0">
@@ -93,7 +94,7 @@ export function Navbar() {
                 </button>
 
                 {dropdownOpen && (
-                  <div className="absolute left-0 top-full mt-3 w-80 rounded-[1.5rem] border border-white/85 bg-white/95 p-2 shadow-[0_28px_70px_-38px_oklch(0.35_0.08_32_/_0.42)] backdrop-blur-xl">
+                  <div className="absolute left-0 top-full mt-3 w-80 rounded-[1.5rem] border border-white/85 bg-white/95 p-2 shadow-[0_28px_70px_-38px_oklch(0.35_0.08_145_/_0.42)] backdrop-blur-xl">
                     {exploreLinks.map((link) => (
                       <Link
                         key={link.to}

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   UserCheck, Shield, Heart, Clock, MessageCircle,
-  CheckCircle, BookOpen, Plus, Trash2, AlertTriangle
+  CheckCircle, BookOpen, Plus, Trash2, AlertTriangle, Upload
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -44,6 +44,8 @@ function VolunteerPage() {
   const [slots, setSlots] = useState<SlotEntry[]>([{ date: "", startTime: "10:00", endTime: "10:30" }]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [cvUploading, setCvUploading] = useState(false);
 
   const expertiseOptions = [
     "Anxiety & Stress",
@@ -74,6 +76,29 @@ function VolunteerPage() {
     const normalizedEmail = email.trim().toLowerCase();
     const selectedLanguages = languages.length > 0 ? languages : ["English"];
 
+    let uploadedCvUrl = null;
+    if (cvFile) {
+      setCvUploading(true);
+      const fileExt = cvFile.name.split('.').pop();
+      const fileName = `${newVolunteerId}.${fileExt}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('volunteers-cvs')
+        .upload(fileName, cvFile);
+
+      if (uploadError) {
+        setErrorMessage("CV upload failed: " + uploadError.message);
+        setCvUploading(false);
+        setLoading(false);
+        return;
+      }
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('volunteers-cvs')
+        .getPublicUrl(fileName);
+      uploadedCvUrl = publicUrl;
+      setCvUploading(false);
+    }
+
     const { error } = await supabase
       .from("volunteers")
       .insert({
@@ -83,6 +108,7 @@ function VolunteerPage() {
         expertise,
         languages: selectedLanguages,
         bio: reason.trim() || null,
+        cv_url: uploadedCvUrl,
       });
 
     setLoading(false);
@@ -234,15 +260,20 @@ function VolunteerPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">Why do you want to volunteer?</label>
-                <textarea
-                  value={reason} onChange={(e) => setReason(e.target.value)}
-                  placeholder="Tell us about your motivation..."
-                  className="w-full rounded-xl border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none h-24"
+                <label className="block text-sm font-medium mb-1.5 flex items-center gap-2">
+                  <Upload className="h-4 w-4 text-muted-foreground" />
+                  Upload CV / Certificate <span className="text-muted-foreground font-normal">(PDF preferred)</span>
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={(e) => setCvFile(e.target.files?.[0] || null)}
+                  className="w-full rounded-xl border bg-background px-4 py-2 text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                  required
                 />
               </div>
-              <Button variant="hero" type="submit" className="w-full rounded-xl" disabled={loading}>
-                {loading ? "Registering..." : "Register & Add Availability"}
+              <Button variant="hero" type="submit" className="w-full rounded-xl" disabled={loading || cvUploading}>
+                {loading || cvUploading ? "Processing..." : "Register & Add Availability"}
               </Button>
             </form>
           </motion.div>
@@ -301,9 +332,12 @@ function VolunteerPage() {
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-safe/10 mx-auto mb-4">
               <CheckCircle className="h-8 w-8 text-safe" />
             </div>
-            <h2 className="font-display text-xl font-semibold">Application Received!</h2>
-            <p className="mt-2 text-muted-foreground max-w-sm mx-auto">
-              Thank you for volunteering. Your profile is now live and students can book the time slots you saved.
+            <h2 className="font-display text-xl font-semibold text-safe">Application Pending Review</h2>
+            <p className="mt-3 text-muted-foreground max-w-sm mx-auto">
+              Thank you for volunteering! Your CV is now being reviewed by our <strong>3 Super-Admins</strong>. 
+            </p>
+            <p className="mt-4 text-xs text-slate-400 max-w-sm mx-auto">
+              We verify every peer listener to ensure SoulSync remains the safest place for student healing. You will receive an email once your profile is verified.
             </p>
           </motion.div>
         )}

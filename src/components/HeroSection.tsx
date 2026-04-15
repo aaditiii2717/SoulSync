@@ -22,19 +22,18 @@ export function HeroSection() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="relative"
         >
-          <div className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-white/60 bg-white/70 px-4 py-2 text-xs font-medium leading-relaxed text-muted-foreground shadow-sm sm:text-sm sm:leading-normal">
-            <Sparkles className="h-4 w-4 text-primary" />
-            Designed to feel supportive, not clinical
+          <div className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-xs font-bold leading-relaxed text-primary shadow-sm sm:text-sm sm:leading-normal">
+            <Shield className="h-4 w-4" />
+            Zero Trace. Absolute Anonymity Guaranteed.
           </div>
 
           <h1 className="mt-6 max-w-4xl font-display text-5xl font-semibold leading-[0.95] tracking-tight sm:text-6xl lg:text-[5.35rem]">
-            When emotions feel tangled,
-            <span className="mt-2 block text-gradient">start somewhere that feels human.</span>
+            A student-led 
+            <span className="mt-2 block text-gradient text-[1.1em]">healing movement.</span>
           </h1>
 
           <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground sm:text-xl">
-            SoulSync gives students and young adults a softer first step into support, blending emotionally aware AI,
-            peer listening, and gentle next actions when words are hard to find.
+            SoulSync is the softer first step. No login, no campus link, no judgment. Join 1,200+ peers rebuilding resilience through emotionally aware AI and verified peer support.
           </p>
 
           <div className="mt-10 flex flex-col items-start gap-4 sm:flex-row">
@@ -64,6 +63,21 @@ export function HeroSection() {
               </div>
             ))}
           </div>
+
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2 }}
+            className="mt-8 flex items-center gap-3 px-1"
+          >
+            <div className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-safe opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-safe"></span>
+            </div>
+            <p className="text-sm font-bold text-slate-500">
+              <span className="text-foreground">42 students</span> are chatting right now. You aren't alone.
+            </p>
+          </motion.div>
         </motion.div>
 
         <motion.div

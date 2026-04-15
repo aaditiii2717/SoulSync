@@ -4,8 +4,11 @@ import { ComparisonSection } from "@/components/ComparisonSection";
 import { CTASection } from "@/components/CTASection";
 import { EmotionalBackdrop } from "@/components/EmotionalBackdrop";
 import { FeaturesSection } from "@/components/FeaturesSection";
+import { NGOImpactSection } from "@/components/NGOImpactSection";
+import { SafetyGovernance } from "@/components/SafetyGovernance";
 import { Footer } from "@/components/Footer";
 import { HeroSection } from "@/components/HeroSection";
+import { ImpactDashboard } from "@/components/ImpactDashboard";
 import { Navbar } from "@/components/Navbar";
 import { WorkflowSection } from "@/components/WorkflowSection";
 
@@ -21,7 +24,10 @@ function LandingPage() {
         <Navbar />
         <HeroSection />
         <FeaturesSection />
+        <NGOImpactSection />
         <WorkflowSection />
+        <ImpactDashboard />
+        <SafetyGovernance />
         <ComparisonSection />
         <CTASection />
         <Footer />
