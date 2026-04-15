@@ -85,19 +85,29 @@ const qnaItems: QnAItem[] = [
   },
 ];
 
-const categories = ["All", ...Array.from(new Set(qnaItems.map((q) => q.category)))];
+const categories = [
+  "All",
+  ...Array.from(new Set(qnaItems.map((q) => q.category))),
+];
 
 function CommunityQnAPage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const filtered = selectedCategory === "All" ? qnaItems : qnaItems.filter((q) => q.category === selectedCategory);
+  const filtered =
+    selectedCategory === "All"
+      ? qnaItems
+      : qnaItems.filter((q) => q.category === selectedCategory);
 
   return (
     <div className="min-h-screen pt-16">
       <Navbar />
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-10"
+        >
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-4">
             <HelpCircle className="h-4 w-4" />
             You&apos;re Not Alone

@@ -24,6 +24,9 @@ export type Database = {
           notes: string | null
           status: string
           time_slot_id: string
+          volunteer_notification_last_error: string | null
+          volunteer_notification_sent_at: string | null
+          volunteer_notification_status: string
         }
         Insert: {
           anonymous_name?: string
@@ -34,6 +37,9 @@ export type Database = {
           notes?: string | null
           status?: string
           time_slot_id: string
+          volunteer_notification_last_error?: string | null
+          volunteer_notification_sent_at?: string | null
+          volunteer_notification_status?: string
         }
         Update: {
           anonymous_name?: string
@@ -44,12 +50,15 @@ export type Database = {
           notes?: string | null
           status?: string
           time_slot_id?: string
+          volunteer_notification_last_error?: string | null
+          volunteer_notification_sent_at?: string | null
+          volunteer_notification_status?: string
         }
         Relationships: [
           {
             foreignKeyName: "session_bookings_time_slot_id_fkey"
             columns: ["time_slot_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "time_slots"
             referencedColumns: ["id"]
           },

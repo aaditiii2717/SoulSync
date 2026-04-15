@@ -4,8 +4,16 @@ import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
-  UserCheck, Shield, Heart, Clock, MessageCircle,
-  CheckCircle, BookOpen, Plus, Trash2, AlertTriangle
+  UserCheck,
+  Shield,
+  Heart,
+  Clock,
+  MessageCircle,
+  CheckCircle,
+  BookOpen,
+  Plus,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -57,11 +65,15 @@ function VolunteerPage() {
   const languageOptions = ["English", "Hindi", "Tamil", "Telugu", "Other"];
 
   const toggleExpertise = (opt: string) => {
-    setExpertise((prev) => (prev.includes(opt) ? prev.filter((e) => e !== opt) : [...prev, opt]));
+    setExpertise((prev) =>
+      prev.includes(opt) ? prev.filter((e) => e !== opt) : [...prev, opt]
+    );
   };
 
   const toggleLanguage = (lang: string) => {
-    setLanguages((prev) => (prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang]));
+    setLanguages((prev) =>
+      prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang]
+    );
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -104,7 +116,9 @@ function VolunteerPage() {
   };
 
   const updateSlot = (idx: number, field: keyof SlotEntry, value: string) => {
-    setSlots((prev) => prev.map((s, i) => (i === idx ? { ...s, [field]: value } : s)));
+    setSlots((prev) =>
+      prev.map((s, i) => (i === idx ? { ...s, [field]: value } : s))
+    );
   };
 
   const handleSubmitSlots = async () => {
@@ -136,7 +150,11 @@ function VolunteerPage() {
     <div className="min-h-screen pt-16">
       <Navbar />
       <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
           <div className="inline-flex items-center gap-2 rounded-full bg-safe/10 px-4 py-1.5 text-sm font-medium text-safe mb-4">
             <UserCheck className="h-4 w-4" />
             Become a Volunteer
@@ -182,13 +200,19 @@ function VolunteerPage() {
 
         {/* Registration Form */}
         {formState === "register" && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="rounded-2xl border bg-card p-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="rounded-2xl border bg-card p-8"
+          >
             <h2 className="font-display text-xl font-semibold mb-6 text-center">Volunteer Registration</h2>
             <form onSubmit={handleRegister} className="space-y-5 max-w-md mx-auto">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Full Name</label>
                 <input
-                  value={name} onChange={(e) => setName(e.target.value)}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   placeholder="Your name"
                   className="w-full rounded-xl border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                   required
@@ -197,7 +221,9 @@ function VolunteerPage() {
               <div>
                 <label className="block text-sm font-medium mb-1.5">Email</label>
                 <input
-                  type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   className="w-full rounded-xl border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                   required
@@ -208,9 +234,13 @@ function VolunteerPage() {
                 <div className="flex flex-wrap gap-2">
                   {expertiseOptions.map((opt) => (
                     <button
-                      key={opt} type="button" onClick={() => toggleExpertise(opt)}
+                      key={opt}
+                      type="button"
+                      onClick={() => toggleExpertise(opt)}
                       className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                        expertise.includes(opt) ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+                        expertise.includes(opt)
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-accent"
                       }`}
                     >
                       {opt}
@@ -223,9 +253,13 @@ function VolunteerPage() {
                 <div className="flex flex-wrap gap-2">
                   {languageOptions.map((lang) => (
                     <button
-                      key={lang} type="button" onClick={() => toggleLanguage(lang)}
+                      key={lang}
+                      type="button"
+                      onClick={() => toggleLanguage(lang)}
                       className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                        languages.includes(lang) ? "bg-calm text-calm-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+                        languages.includes(lang)
+                          ? "bg-calm text-calm-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-accent"
                       }`}
                     >
                       {lang}
@@ -236,12 +270,18 @@ function VolunteerPage() {
               <div>
                 <label className="block text-sm font-medium mb-1.5">Why do you want to volunteer?</label>
                 <textarea
-                  value={reason} onChange={(e) => setReason(e.target.value)}
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
                   placeholder="Tell us about your motivation..."
                   className="w-full rounded-xl border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none h-24"
                 />
               </div>
-              <Button variant="hero" type="submit" className="w-full rounded-xl" disabled={loading}>
+              <Button
+                variant="hero"
+                type="submit"
+                className="w-full rounded-xl"
+                disabled={loading}
+              >
                 {loading ? "Registering..." : "Register & Add Availability"}
               </Button>
             </form>
@@ -250,7 +290,11 @@ function VolunteerPage() {
 
         {/* Add Time Slots */}
         {formState === "slots" && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border bg-card p-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl border bg-card p-8"
+          >
             <h2 className="font-display text-xl font-semibold mb-2 text-center">Add Your Available Time Slots</h2>
             <p className="text-sm text-muted-foreground text-center mb-6">
               Students will be able to anonymously book these slots for a support session with you.
@@ -260,18 +304,21 @@ function VolunteerPage() {
                 <div key={idx} className="flex items-center gap-2">
                   <div className="flex-1 grid grid-cols-3 gap-2">
                     <input
-                      type="date" value={slot.date}
+                      type="date"
+                      value={slot.date}
                       onChange={(e) => updateSlot(idx, "date", e.target.value)}
                       min={new Date().toISOString().split("T")[0]}
                       className="rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                     <input
-                      type="time" value={slot.startTime}
+                      type="time"
+                      value={slot.startTime}
                       onChange={(e) => updateSlot(idx, "startTime", e.target.value)}
                       className="rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                     <input
-                      type="time" value={slot.endTime}
+                      type="time"
+                      value={slot.endTime}
                       onChange={(e) => updateSlot(idx, "endTime", e.target.value)}
                       className="rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
@@ -288,7 +335,12 @@ function VolunteerPage() {
               </Button>
             </div>
             <div className="mt-6 max-w-lg mx-auto">
-              <Button variant="hero" className="w-full rounded-xl" onClick={handleSubmitSlots} disabled={loading}>
+              <Button
+                variant="hero"
+                className="w-full rounded-xl"
+                onClick={handleSubmitSlots}
+                disabled={loading}
+              >
                 {loading ? "Saving..." : "Save Availability & Submit"}
               </Button>
             </div>
@@ -297,7 +349,11 @@ function VolunteerPage() {
 
         {/* Success */}
         {formState === "submitted" && (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="rounded-2xl border bg-card p-12 text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="rounded-2xl border bg-card p-12 text-center"
+          >
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-safe/10 mx-auto mb-4">
               <CheckCircle className="h-8 w-8 text-safe" />
             </div>
@@ -316,7 +372,10 @@ function VolunteerPage() {
             { icon: Clock, label: "Flexible Schedule" },
             { icon: CheckCircle, label: "Certificate Provided" },
           ].map((badge) => (
-            <div key={badge.label} className="flex items-center gap-2 rounded-xl border p-3 text-center justify-center">
+            <div
+              key={badge.label}
+              className="flex items-center gap-2 rounded-xl border p-3 text-center justify-center"
+            >
               <badge.icon className="h-4 w-4 text-primary shrink-0" />
               <span className="text-xs font-medium">{badge.label}</span>
             </div>

@@ -4,13 +4,23 @@ import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-  Users, MessageCircle, Shield, Globe, Clock, Heart,
-  Calendar, Phone, AlertTriangle, CheckCircle, ChevronRight
+  Users,
+  Shield,
+  Globe,
+  Clock,
+  Heart,
+  Calendar,
+  Phone,
+  AlertTriangle,
+  CheckCircle,
+  ChevronRight,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { bookPeerSupportSession } from "@/utils/session-booking.functions";
 
 export const Route = createFileRoute("/peer-match")({
   component: PeerMatchPage,
@@ -55,6 +65,8 @@ function PeerMatchPage() {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [showCrisis, setShowCrisis] = useState(false);
+  const [bookingError, setBookingError] = useState("");
+  const [bookingWarning, setBookingWarning] = useState("");
 
   // Fetch volunteers matching the issue
   const fetchVolunteers = async (issueLabel: string) => {
@@ -84,6 +96,8 @@ function PeerMatchPage() {
   };
 
   const handleIssueSelect = (issueId: string) => {
+    setBookingError("");
+    setBookingWarning("");
     setSelectedIssue(issueId);
     const issue = issueTypes.find((i) => i.id === issueId);
     if (issue) fetchVolunteers(issue.label);
@@ -91,12 +105,14 @@ function PeerMatchPage() {
   };
 
   const handleVolunteerSelect = (vol: Volunteer) => {
+    setBookingError("");
     setSelectedVolunteer(vol);
     fetchSlots(vol.id);
     setStep("slots");
   };
 
   const handleSlotSelect = (slot: TimeSlot) => {
+    setBookingError("");
     setSelectedSlot(slot);
     setStep("confirm");
   };
@@ -104,23 +120,53 @@ function PeerMatchPage() {
   const handleBooking = async () => {
     if (!selectedSlot) return;
     setLoading(true);
+    setBookingError("");
+    setBookingWarning("");
 
-    // Mark slot as booked
-    await supabase
-      .from("time_slots")
-      .update({ is_booked: true })
-      .eq("id", selectedSlot.id);
+    try {
+      const result = await bookPeerSupportSession({
+        data: {
+          timeSlotId: selectedSlot.id,
+          anonymousName: anonName,
+          issueType: currentIssue?.label ?? selectedIssue,
+          notes,
+        },
+      });
 
-    // Create booking
-    await supabase.from("session_bookings").insert({
-      time_slot_id: selectedSlot.id,
-      anonymous_name: anonName.trim() || "Anonymous",
-      issue_type: selectedIssue,
-      notes: notes.trim() || null,
-    });
-
-    setLoading(false);
-    setStep("booked");
+      setSelectedVolunteer((prev) =>
+        prev
+          ? prev
+          : {
+              id: result.volunteerId,
+              name: result.volunteerName,
+              expertise: [],
+              bio: null,
+              languages: [],
+            },
+      );
+      setSelectedSlot((prev) =>
+        prev
+          ? {
+              ...prev,
+              slot_date: result.slotDate,
+              start_time: result.startTime,
+              end_time: result.endTime,
+            }
+          : null,
+      );
+      setBookingWarning(result.volunteerNotificationWarning || "");
+      setStep("booked");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "We could not complete the booking. Please try again.";
+      setBookingError(message);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetFlow = () => {
@@ -130,6 +176,8 @@ function PeerMatchPage() {
     setSelectedSlot(null);
     setAnonName("");
     setNotes("");
+    setBookingError("");
+    setBookingWarning("");
   };
 
   const currentIssue = issueTypes.find((i) => i.id === selectedIssue);
@@ -139,6 +187,22 @@ function PeerMatchPage() {
       <Navbar />
       <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl">
+          {bookingError && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Booking failed</AlertTitle>
+              <AlertDescription>{bookingError}</AlertDescription>
+            </Alert>
+          )}
+
+          {bookingWarning && (
+            <Alert className="mb-6">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Volunteer email warning</AlertTitle>
+              <AlertDescription>{bookingWarning}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Header */}
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-4">
@@ -261,7 +325,12 @@ function PeerMatchPage() {
           <AnimatePresence mode="wait">
             {/* Step 1: Select Issue */}
             {step === "issue" && (
-              <motion.div key="issue" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+              <motion.div
+                key="issue"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
                 <h2 className="font-display text-lg font-semibold mb-4 text-center">
                   What would you like support with?
                 </h2>
@@ -282,7 +351,12 @@ function PeerMatchPage() {
 
             {/* Step 2: Volunteer Availability Board */}
             {step === "volunteers" && (
-              <motion.div key="volunteers" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+              <motion.div
+                key="volunteers"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-display text-lg font-semibold">
                     Available Supporters for {currentIssue?.label}
@@ -296,7 +370,11 @@ function PeerMatchPage() {
                 ) : volunteers.length === 0 ? (
                   <Card className="p-8 text-center">
                     <p className="text-muted-foreground">No supporters available for this topic right now.</p>
-                    <Button variant="outline" className="mt-4 rounded-xl" onClick={() => setStep("issue")}>
+                    <Button
+                      variant="outline"
+                      className="mt-4 rounded-xl"
+                      onClick={() => setStep("issue")}
+                    >
                       Try Another Topic
                     </Button>
                   </Card>
@@ -346,7 +424,12 @@ function PeerMatchPage() {
 
             {/* Step 3: Time Slot Selection */}
             {step === "slots" && (
-              <motion.div key="slots" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+              <motion.div
+                key="slots"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-display text-lg font-semibold">
                     Available Slots — {selectedVolunteer?.name}
@@ -360,7 +443,11 @@ function PeerMatchPage() {
                 ) : slots.length === 0 ? (
                   <Card className="p-8 text-center">
                     <p className="text-muted-foreground">No available slots for this supporter right now.</p>
-                    <Button variant="outline" className="mt-4 rounded-xl" onClick={() => setStep("volunteers")}>
+                    <Button
+                      variant="outline"
+                      className="mt-4 rounded-xl"
+                      onClick={() => setStep("volunteers")}
+                    >
                       Choose Another Supporter
                     </Button>
                   </Card>
@@ -402,7 +489,12 @@ function PeerMatchPage() {
 
             {/* Step 4: Confirm Booking */}
             {step === "confirm" && selectedSlot && selectedVolunteer && (
-              <motion.div key="confirm" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+              <motion.div
+                key="confirm"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
                 <Card className="p-8">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="font-display text-lg font-semibold">Confirm Your Booking</h2>
@@ -450,7 +542,8 @@ function PeerMatchPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1.5">
-                        Anything you&apos;d like the supporter to know? <span className="text-muted-foreground font-normal">(optional)</span>
+                        Anything you&apos;d like the supporter to know?{" "}
+                        <span className="text-muted-foreground font-normal">(optional)</span>
                       </label>
                       <textarea
                         value={notes}
@@ -466,6 +559,14 @@ function PeerMatchPage() {
                     Your identity is fully protected. The volunteer only sees your display name.
                   </div>
 
+                  {bookingError && (
+                    <Alert variant="destructive" className="mt-4">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Booking failed</AlertTitle>
+                      <AlertDescription>{bookingError}</AlertDescription>
+                    </Alert>
+                  )}
+
                   <Button
                     variant="hero"
                     className="w-full mt-6 rounded-xl"
@@ -480,7 +581,11 @@ function PeerMatchPage() {
 
             {/* Step 5: Booked Success */}
             {step === "booked" && (
-              <motion.div key="booked" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+              <motion.div
+                key="booked"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
                 <Card className="p-8 text-center">
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-safe/10 mx-auto mb-4">
                     <CheckCircle className="h-8 w-8 text-safe" />
@@ -500,8 +605,19 @@ function PeerMatchPage() {
                   <p className="mt-4 text-xs text-muted-foreground">
                     You&apos;ll be connected via the chat at the scheduled time. No personal info shared.
                   </p>
+                  {bookingWarning && (
+                    <Alert className="mt-4 text-left">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Volunteer email warning</AlertTitle>
+                      <AlertDescription>{bookingWarning}</AlertDescription>
+                    </Alert>
+                  )}
                   <div className="mt-6 flex gap-3 justify-center">
-                    <Button variant="hero" className="rounded-xl" onClick={() => window.location.href = "/chat"}>
+                    <Button
+                      variant="hero"
+                      className="rounded-xl"
+                      onClick={() => (window.location.href = "/chat")}
+                    >
                       Go to Chat
                     </Button>
                     <Button variant="outline" className="rounded-xl" onClick={resetFlow}>

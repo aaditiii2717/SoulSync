@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, Bot, User, Shield, Sparkles } from "lucide-react";
+import { Send, Bot, User, Shield, Sparkles, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { sendChatMessage } from "@/utils/chat.functions";
 import ReactMarkdown from "react-markdown";
@@ -23,7 +23,8 @@ export function ChatInterface() {
     {
       id: "1",
       role: "assistant",
-      content: "Hey 👋 I'm here to listen — no judgment, completely anonymous. Whether you want to talk, vent, or just try a quick breathing exercise, I'm with you. How are you feeling right now?",
+      content:
+        "Hey 👋 I'm here to listen — no judgment, completely anonymous. Whether you want to talk, vent, or just try a quick breathing exercise, I'm with you. How are you feeling right now?",
     },
   ]);
   const [input, setInput] = useState("");
@@ -77,52 +78,60 @@ export function ChatInterface() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b bg-card">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-wellness">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-white/60 bg-white/70 backdrop-blur-xl">
+        <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl gradient-wellness shadow-sm">
           <Bot className="h-5 w-5 text-primary-foreground" />
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-safe shadow-sm">
+            <span className="h-2 w-2 rounded-full bg-safe [animation:pulse-glow_2.5s_ease-in-out_infinite]" />
+          </span>
         </div>
         <div>
-          <h3 className="font-display text-sm font-semibold">SoulSync Companion</h3>
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <Shield className="h-3 w-3" /> Anonymous · CBT-Guided
+          <h3 className="font-display text-sm font-semibold leading-tight">SoulSync Companion</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground flex items-center gap-1.5">
+            <Shield className="h-3 w-3" />
+            Anonymous · CBT-Guided · Always here
           </p>
         </div>
-        <div className="ml-auto flex items-center gap-1.5 rounded-full bg-safe/10 px-3 py-1">
-          <div className="h-2 w-2 rounded-full bg-safe animate-pulse" />
-          <span className="text-xs font-medium text-safe">Online</span>
+        <div className="ml-auto flex items-center gap-2 rounded-full bg-safe/12 px-3.5 py-1.5 border border-safe/20">
+          <div className="h-2 w-2 rounded-full bg-safe [animation:pulse-glow_2.5s_ease-in-out_infinite]" />
+          <span className="text-xs font-semibold text-safe">Online</span>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <AnimatePresence>
+      <div className="flex-1 overflow-y-auto p-5 space-y-5">
+        <AnimatePresence initial={false}>
           {messages.map((msg) => (
             <motion.div
               key={msg.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 14, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
               className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
             >
+              {/* Avatar */}
               <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
-                  msg.role === "assistant" ? "bg-primary/10" : "bg-muted"
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl shadow-sm ${
+                  msg.role === "assistant" ? "gradient-wellness" : "bg-muted/80 border border-white/60"
                 }`}
               >
                 {msg.role === "assistant" ? (
-                  <Bot className="h-4 w-4 text-primary" />
+                  <Bot className="h-4 w-4 text-primary-foreground" />
                 ) : (
                   <User className="h-4 w-4 text-muted-foreground" />
                 )}
               </div>
+
+              {/* Bubble */}
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                className={`max-w-[76%] rounded-3xl px-5 py-3.5 text-sm leading-relaxed shadow-sm ${
                   msg.role === "assistant"
-                    ? "bg-card border text-card-foreground"
-                    : "gradient-wellness text-primary-foreground"
+                    ? "premium-card text-card-foreground rounded-tl-md"
+                    : "gradient-wellness text-primary-foreground rounded-tr-md shadow-[0_8px_24px_-8px_oklch(0.42_0.14_33_/_0.4)]"
                 }`}
               >
                 {msg.role === "assistant" ? (
-                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <div className="prose prose-sm max-w-none text-foreground/90 [&>p]:my-1.5 [&>p:first-child]:mt-0 [&>p:last-child]:mb-0">
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
                   </div>
                 ) : (
@@ -135,30 +144,48 @@ export function ChatInterface() {
 
         {/* Quick prompts */}
         {showQuickPrompts && !isTyping && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="flex flex-wrap gap-2 pl-11">
-            {quickPrompts.map((prompt) => (
-              <button
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="flex flex-wrap gap-2 pl-12"
+          >
+            {quickPrompts.map((prompt, i) => (
+              <motion.button
                 key={prompt}
+                initial={{ opacity: 0, scale: 0.94 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.7 + i * 0.08 }}
                 onClick={() => send(prompt)}
-                className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/65 bg-white/80 px-4 py-2 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur-sm transition-all duration-200 hover:text-foreground hover:border-primary/30 hover:bg-white hover:scale-105 hover:shadow-md active:scale-98"
               >
-                <Sparkles className="h-3 w-3" />
+                <Sparkles className="h-3 w-3 text-primary/50" />
                 {prompt}
-              </button>
+              </motion.button>
             ))}
           </motion.div>
         )}
 
+        {/* Typing indicator */}
         {isTyping && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
-              <Bot className="h-4 w-4 text-primary" />
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="flex gap-3"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl gradient-wellness shadow-sm">
+              <Bot className="h-4 w-4 text-primary-foreground" />
             </div>
-            <div className="rounded-2xl bg-card border px-4 py-3">
-              <div className="flex gap-1">
-                <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "0ms" }} />
-                <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "150ms" }} />
-                <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+            <div className="premium-card rounded-3xl rounded-tl-md px-5 py-3.5">
+              <div className="flex items-center gap-1.5">
+                {[0, 150, 300].map((delay) => (
+                  <div
+                    key={delay}
+                    className="h-2.5 w-2.5 rounded-full bg-primary/40 animate-bounce"
+                    style={{ animationDelay: `${delay}ms` }}
+                  />
+                ))}
               </div>
             </div>
           </motion.div>
@@ -168,25 +195,34 @@ export function ChatInterface() {
       </div>
 
       {/* Input */}
-      <div className="border-t bg-card p-4">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            send();
-          }}
-          className="flex items-center gap-3"
-        >
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type anything — it's completely anonymous..."
-            className="flex-1 rounded-xl border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-            disabled={isTyping}
-          />
-          <Button type="submit" variant="hero" size="icon" className="rounded-xl h-11 w-11 shrink-0" disabled={isTyping}>
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
+      <div className="border-t border-white/55 bg-white/70 backdrop-blur-xl px-5 py-4">
+        <div className="flex items-center gap-2 rounded-2xl border border-white/65 bg-white/90 px-1 pl-4 shadow-sm focus-within:border-primary/30 focus-within:shadow-[0_0_0_3px_oklch(0.61_0.17_33_/_0.1)] transition-all duration-200">
+          <Heart className="h-4 w-4 text-primary/30 shrink-0" />
+          <form
+            onSubmit={(e) => { e.preventDefault(); send(); }}
+            className="flex flex-1 items-center gap-2"
+          >
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type anything — it's completely anonymous..."
+              className="flex-1 bg-transparent py-3 text-sm placeholder:text-muted-foreground/60 focus:outline-none"
+              disabled={isTyping}
+            />
+            <Button
+              type="submit"
+              variant="hero"
+              size="icon"
+              className="rounded-xl h-10 w-10 shrink-0 shadow-sm transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+              disabled={isTyping || !input.trim()}
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </form>
+        </div>
+        <p className="mt-2 text-center text-[0.65rem] text-muted-foreground/55">
+          Your conversations are private and never stored with identifying info.
+        </p>
       </div>
     </div>
   );

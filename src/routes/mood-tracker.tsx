@@ -51,7 +51,10 @@ function MoodTrackerPage() {
     <div className="min-h-screen pt-16">
       <Navbar />
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <h1 className="font-display text-3xl font-bold flex items-center gap-3">
             <TrendingUp className="h-8 w-8 text-primary" />
             Mood Journey
@@ -72,7 +75,11 @@ function MoodTrackerPage() {
           </h2>
           <MoodSelector selected={todayMood} onSelect={setTodayMood} />
           {todayMood && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 space-y-3">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-4 space-y-3"
+            >
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
@@ -83,7 +90,11 @@ function MoodTrackerPage() {
                 <Plus className="h-4 w-4 mr-1" /> Log Mood
               </Button>
               {showLog && (
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-safe font-medium">
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-sm text-safe font-medium"
+                >
                   ✓ Mood logged! Keep tracking to see patterns.
                 </motion.p>
               )}
