@@ -137,7 +137,7 @@ export function HeroSection() {
             </motion.div>
 
             <motion.div
-              className="absolute -left-5 bottom-6 hidden sm:block"
+              className="absolute -left-12 bottom-12 hidden 2xl:block"
               animate={{ y: [0, 14, 0] }}
               transition={{ repeat: Infinity, duration: 5.8, ease: "easeInOut" }}
             >
@@ -161,7 +161,7 @@ export function HeroSection() {
             </motion.div>
 
             <motion.div
-              className="absolute -right-6 top-10 hidden lg:block"
+              className="absolute -right-12 top-10 hidden 2xl:block"
               animate={{ y: [0, -16, 0] }}
               transition={{ repeat: Infinity, duration: 7.2, ease: "easeInOut" }}
             >

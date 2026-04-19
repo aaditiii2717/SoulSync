@@ -2,28 +2,28 @@ import { motion } from "framer-motion";
 
 const floatingPanels = [
   {
-    className: "left-[2%] top-[12%] hidden xl:block",
-    transform: "rotateY(25deg) rotateX(15deg) translateZ(40px)",
+    className: "left-[1%] top-[45%] hidden 2xl:block",
+    transform: "rotateY(20deg) rotateX(10deg) translateZ(10px)",
     eyebrow: "Breathing Room",
     title: "You can start small.",
     copy: "A single honest sentence is enough to begin a caring conversation.",
-    duration: 8.5,
+    duration: 10.5,
   },
   {
-    className: "right-[2%] top-[18%] hidden 2xl:block",
-    transform: "rotateY(-25deg) rotateX(12deg) translateZ(60px)",
+    className: "right-[1%] top-[55%] hidden 2xl:block",
+    transform: "rotateY(-20deg) rotateX(8deg) translateZ(20px)",
     eyebrow: "Human Warmth",
     title: "Support can feel close.",
     copy: "Layered guidance and peer listening create a softer emotional landing.",
-    duration: 9.5,
+    duration: 11.5,
   },
   {
-    className: "left-[8%] bottom-[15%] hidden xl:block",
-    transform: "rotateY(18deg) rotateX(-8deg) translateZ(30px)",
+    className: "left-[5%] bottom-[5%] hidden xl:block",
+    transform: "rotateY(15deg) rotateX(-5deg) translateZ(5px)",
     eyebrow: "Gentle Pace",
     title: "No pressure to explain everything.",
     copy: "The interface helps people breathe, reflect, and choose their next step slowly.",
-    duration: 10.5,
+    duration: 12.5,
   },
 ];
 
@@ -69,14 +69,14 @@ export function EmotionalBackdrop() {
           animate={{ y: [0, -18, 0], rotateZ: [-1, 1, -1] }}
           transition={{ repeat: Infinity, duration: panel.duration, ease: "easeInOut" }}
         >
-          <div className="scene-panel w-64 rounded-[1.6rem] p-4 opacity-90 shadow-lg" style={{ transform: panel.transform }}>
-            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-primary/60">
+          <div className="scene-panel w-64 rounded-[1.6rem] p-4 opacity-40 shadow-sm transition-opacity hover:opacity-100" style={{ transform: panel.transform }}>
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-primary/40">
               {panel.eyebrow}
             </p>
-            <h3 className="mt-3 font-display text-2xl font-semibold leading-tight text-foreground/90">
+            <h3 className="mt-3 font-display text-2xl font-semibold leading-tight text-foreground/50">
               {panel.title}
             </h3>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground/80">{panel.copy}</p>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground/40">{panel.copy}</p>
           </div>
         </motion.div>
       ))}

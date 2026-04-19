@@ -3,8 +3,8 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { 
-  Heart, Globe, Mail, ShieldCheck, 
+import {
+  Heart, Globe, Mail, ShieldCheck,
   ExternalLink, Sparkles, HandHeart, Info
 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -16,7 +16,17 @@ export const Route = createFileRoute("/partners" as any)({
   component: PartnersPage,
 });
 
-const defaultNgos = [
+interface NGO {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  logo?: string;
+  logo_url?: string;
+  email: string;
+}
+
+const defaultNgos: NGO[] = [
   {
     id: "ngo-1",
     name: "The Banyan",
@@ -43,24 +53,33 @@ const defaultNgos = [
 ];
 
 function PartnersPage() {
-  const [ngos, setNgos] = useState<any[]>([]);
+  const [ngos, setNgos] = useState<NGO[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedNgo, setSelectedNgo] = useState<any>(null);
+  const [selectedNgo, setSelectedNgo] = useState<NGO | null>(null);
   const [isDonationOpen, setIsDonationOpen] = useState(false);
 
   useEffect(() => {
     async function fetchNgos() {
-      const { data, error } = await supabase
-        .from("ngos")
-        .select("*")
-        .eq("is_verified", true);
-      
-      if (!error && data && data.length > 0) {
-        setNgos(data);
-      } else {
-        setNgos(defaultNgos); // Fallback to demo data
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("ngos")
+          .select("*")
+          .eq("is_verified", true);
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          setNgos(data);
+        } else {
+          setNgos(defaultNgos); // Fallback to demo data
+        }
+      } catch (err) {
+        console.error("Fetch NGOS error:", err);
+        setNgos(defaultNgos); // Graceful fallback
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     fetchNgos();
   }, []);
@@ -68,13 +87,13 @@ function PartnersPage() {
   return (
     <div className="min-h-screen flex flex-col pt-16 bg-[#F8FAFC]">
       <Navbar />
-      
+
       <main className="flex-1">
         {/* Hero Section */}
         <section className="py-20 px-4 relative overflow-hidden bg-white">
           <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl opacity-50" />
           <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-calm/5 rounded-full blur-3xl opacity-50" />
-          
+
           <div className="container mx-auto max-w-5xl relative z-10 text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -149,8 +168,8 @@ function PartnersPage() {
                         </p>
 
                         <div className="flex flex-col gap-3">
-                          <Button 
-                            variant="hero" 
+                          <Button
+                            variant="hero"
                             className="w-full h-12 rounded-2xl font-bold gap-2 shadow-lg"
                             onClick={() => {
                               setSelectedNgo(ngo);
@@ -160,7 +179,7 @@ function PartnersPage() {
                             <Heart className="h-4 w-4" /> Support with Donation
                           </Button>
                           <div className="flex items-center gap-2">
-                             <Button variant="outline" className="flex-1 h-11 rounded-2xl text-xs gap-1.5 font-bold border-slate-100 hover:bg-slate-50 h-10">
+                            <Button variant="outline" className="flex-1 h-11 rounded-2xl text-xs gap-1.5 font-bold border-slate-100 hover:bg-slate-50 h-10">
                               <Globe className="h-3.5 w-3.5" /> Website
                             </Button>
                             <Button variant="outline" className="flex-1 h-11 rounded-2xl text-xs gap-1.5 font-bold border-slate-100 hover:bg-slate-50 h-10">
@@ -207,7 +226,7 @@ function PartnersPage() {
           ngoId={selectedNgo.id}
         />
       )}
-      
+
       <Footer />
     </div>
   );

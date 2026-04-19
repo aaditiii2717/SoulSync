@@ -60,7 +60,7 @@ function PeerMatchPage() {
   const [showCrisis, setShowCrisis] = useState(false);
   const [meetingToken, setMeetingToken] = useState("");
   const [callType, setCallType] = useState<"video" | "voice">("voice");
-  const [surveyAnswers, setSurveyAnswers] = useState<Record<string, any>>({});
+  const [surveyAnswers, setSurveyAnswers] = useState<Record<string, string>>({});
   const [currentSurveyIdx, setCurrentSurveyIdx] = useState(0);
   const [hasJoined, setHasJoined] = useState(false);
   const [moodRating, setMoodRating] = useState<number | null>(null);
@@ -89,28 +89,44 @@ function PeerMatchPage() {
   // Fetch volunteers matching the issue
   const fetchVolunteers = async (issueLabel: string) => {
     setLoading(true);
-    const { data } = await supabase
-      .from("volunteers")
-      .select("id, name, expertise, bio, languages")
-      .eq("is_active", true)
-      .contains("expertise", [issueLabel]);
-    setVolunteers((data as Volunteer[]) || []);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from("volunteers")
+        .select("id, name, expertise, bio, languages")
+        .eq("is_active", true)
+        .contains("expertise", [issueLabel]);
+      
+      if (error) throw error;
+      setVolunteers((data as Volunteer[]) || []);
+    } catch (err) {
+      console.error("Fetch volunteers error:", err);
+      toast.error("Could not find matching peers. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Fetch available slots for a volunteer
   const fetchSlots = async (volunteerId: string) => {
     setLoading(true);
-    const { data } = await supabase
-      .from("time_slots")
-      .select("*")
-      .eq("volunteer_id", volunteerId)
-      .eq("is_booked", false)
-      .gte("slot_date", new Date().toISOString().split("T")[0])
-      .order("slot_date", { ascending: true })
-      .order("start_time", { ascending: true });
-    setSlots((data as TimeSlot[]) || []);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from("time_slots")
+        .select("*")
+        .eq("volunteer_id", volunteerId)
+        .eq("is_booked", false)
+        .gte("slot_date", new Date().toISOString().split("T")[0])
+        .order("slot_date", { ascending: true })
+        .order("start_time", { ascending: true });
+      
+      if (error) throw error;
+      setSlots((data as TimeSlot[]) || []);
+    } catch (err) {
+      console.error("Fetch slots error:", err);
+      toast.error("Could not retrieve availability. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleIssueSelect = (issueId: string) => {
@@ -186,6 +202,9 @@ function PeerMatchPage() {
 
   // Improved volunteer matching logic
   const sortedVolunteers = [...volunteers].sort((a, b) => {
+    let scoreA = 0;
+    let scoreB = 0;
+    
     // Priority sorting: Primary Volunteer first, then Match Score
     if (a.id === primaryVolunteerId) scoreA += 100;
     if (b.id === primaryVolunteerId) scoreB += 100;

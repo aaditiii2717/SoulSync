@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -30,22 +30,34 @@ function VolunteerDashboard() {
     setLoading(true);
     setError("");
 
-    const { data: vol, error: volError } = await supabase
-      .from("volunteers")
-      .select("*")
-      .eq("email", email.trim().toLowerCase())
-      .single();
+    try {
+      const { data: vol, error: volError } = await supabase
+        .from("volunteers")
+        .select("*")
+        .eq("email", email.trim().toLowerCase())
+        .single();
 
-    if (vol.verification_status !== "verified") {
-      setError("Your application is still under review. Please wait for an Admin to verify your CV.");
+      if (volError || !vol) {
+        setError("We couldn't find a volunteer account with that email. Please check your spelling or register first.");
+        setLoading(false);
+        return;
+      }
+
+      if (vol.verification_status !== "verified") {
+        setError("Your application is still under review. Please wait for an Admin to verify your CV.");
+        setLoading(false);
+        return;
+      }
+
+      setVolunteer(vol);
+      fetchSessions(vol.id);
+      setIsLoggedIn(true);
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("An unexpected error occurred. Please try again later.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setVolunteer(vol);
-    fetchSessions(vol.id);
-    setIsLoggedIn(true);
-    setLoading(false);
   };
 
   const fetchSessions = async (volId: string) => {
@@ -119,14 +131,6 @@ function VolunteerDashboard() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-             {volunteer.is_admin && (
-               <Link to="/admin/command-center">
-                 <Button variant="hero" className="rounded-2xl h-12 shadow-md flex items-center gap-2">
-                    <Shield className="h-4 w-4" />
-                    Enter Command Center 🦅
-                 </Button>
-               </Link>
-             )}
              <div className="bg-white px-4 py-2 rounded-2xl shadow-sm border border-slate-100 text-center">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Sessions</p>
                 <p className="text-xl font-black">{sessions.length}</p>

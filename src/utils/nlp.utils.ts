@@ -4,7 +4,7 @@ import { pipeline } from "@xenova/transformers";
 // https://huggingface.co/SamLowe/roberta-base-go_emotions
 let classifier: any = null;
 
-export async function detectEmotions(text: string) {
+export async function detectEmotions(text: string): Promise<DetectedEmotion[]> {
   if (!classifier) {
     classifier = await pipeline("text-classification", "SamLowe/roberta-base-go_emotions", {
       revision: "main",
@@ -14,9 +14,9 @@ export async function detectEmotions(text: string) {
   const result = await classifier(text, { topk: 5 });
   
   // Filter for emotions with a confidence score > 0.1
-  return result
-    .filter((r: any) => r.score > 0.1)
-    .map((r: any) => ({
+  return (result as any[])
+    .filter((r) => r.score > 0.1)
+    .map((r) => ({
       label: r.label,
       score: r.score,
     }));

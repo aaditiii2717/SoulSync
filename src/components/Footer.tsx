@@ -12,6 +12,7 @@ const footerLinks = {
     { to: "/check-in", label: "My Check-In" },
     { to: "/mood-tracker", label: "Mood Journal" },
     { to: "/volunteer", label: "Become a Volunteer" },
+    { to: "/admin", label: "Admin Portal" },
   ],
   "Crisis Support": [
     { href: "tel:988", label: "988 Lifeline (Call/Text)" },

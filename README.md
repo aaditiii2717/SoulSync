@@ -64,21 +64,29 @@ The following functions can be tested via the `/utils/chat.functions.ts` server 
 
 ## 5. Route Map
 -   `/`: Landing Page (Movement Vision, Live Ticker, Impact Dashboard).
--   `/chat`: The AI Companion Interface (Infinite Memory Chat).
+-   `/chat`: The AI Companion Interface (Multilingual Indian context support).
 -   `/peer-match`: Anonymous Peer Matching (8-Question Psych Survey).
--   `/volunteer/dashboard`: Supporter Hub (AI Briefing access and Session Reporting).
--   `/admin/command-center`: **HQ Hub** (Reserved for 3 Super-Admins to oversee global metrics, manage volunteers, and audit briefings).
--   `/partners`: NGO Philanthropic Hub.
+-   `/volunteer/dashboard`: Peer Supporter Hub (AI Briefing & Session Logs).
+-   `/admin`: **Master Control Login** (Dedicated entry for Super-Admins).
+-   `/admin/command-center`: **Governance Hub** (Oversight, Personnel Supervision, and Live Surveillance).
+-   `/partners`: NGO Philanthropic Hub & Donation Gateway.
 
-## 6. Admin Governance (3 Super-Admins)
-We have implemented a dual-layer security model:
-1.  **Peer Volunteers**: Verified individuals who handle student reports and sessions.
-2.  **Super-Admins**: A group of exactly 3 authorized managers who govern the entire registry, verify CVs, and monitor platform performance in the **Command Center**.
+## 6. Project Highlights (Hackathon Ready)
+-   **Multilingual AI**: Real-time switching between English, Hindi, and Hinglish.
+-   **Boss-Level Governance**: Dedicated Supervision portal for platform administrators.
+-   **Circular Healing**: Integrated (simulated) payment gateway for NGO contributions.
+-   **Zero-Trace Identity**: Local-only Alias UUID protocol for absolute student safety.
 
-## 7. Setup & Installation
+## 7. Admin Credentials
+The following admins are authorized in the database:
+- `aaditishrivastava17@gmail.com`
+- `aniket.aniket07sah@gmail.com`
+- `varadprabhu2442@gmail.com`
+
+## 8. Setup & Installation
 1.  **Dependencies**: `bun install`
 2.  **Environment**: Create `.env` with `GEMINI_API_KEY` and `VITE_SUPABASE_URL`.
-3.  **Migrations**: Run SQL files in `/supabase/migrations/` (01_Master -> 03_Governance).
+3.  **Migrations**: Run SQL files in `/supabase/migrations/`.
 4.  **Dev Server**: `bun dev`
 
 ---

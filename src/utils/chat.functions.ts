@@ -42,13 +42,36 @@ Only if the conversation naturally moves toward a need for space or grounding, s
 ## Memory Context
 "${memoryContext || "This is a fresh start! Focus on getting to know their rhythm today."}"
 
+## Linguistics (A Local Friend)
+- **Multilingual**: You are a linguistic expert. If a user asks to switch languages (Hindi, Tamil, etc.) or starts speaking in another language, switch immediately.
+- **Code-Switching**: In India, "Hinglish" (mixing Hindi and English) is very natural. Feel free to use it if the user does, as it makes you feel more like a real college peer.
+- **Personality Retention**: No matter the language, stay warm, casual, and "SoulSync."
+
 ## Guidelines
 - Keep responses short, punchy, and warm. 
 - Avoid long bulleted lists or "AI assistant" structures.
 - Sound like someone who is actually listening.`;
 
+interface Emotion {
+  label: string;
+  score: number;
+}
+
+interface ChatReport {
+  emotions: Emotion[];
+  summary: string;
+}
+
+interface SurveyAnswers {
+  intensity: string;
+  need: string;
+  style: string;
+  priority: string;
+  [key: string]: string;
+}
+
 export const generateVolunteerBriefing = createServerFn({ method: "POST" })
-  .inputValidator((input: { chatReport: any, surveyAnswers: any }) => input)
+  .inputValidator((input: { chatReport: ChatReport, surveyAnswers: SurveyAnswers }) => input)
   .handler(async ({ data }) => {
     const geminiApiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
     if (!geminiApiKey) return { briefing: "Briefing unavailable." };

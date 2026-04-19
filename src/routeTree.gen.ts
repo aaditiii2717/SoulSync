@@ -18,6 +18,8 @@ import { Route as CommunityQnaRouteImport } from './routes/community-qna'
 import { Route as CheckInRouteImport } from './routes/check-in'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VolunteerIndexRouteImport } from './routes/volunteer/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as VolunteerDashboardRouteImport } from './routes/volunteer/dashboard'
 import { Route as AdminVolunteersRouteImport } from './routes/admin/volunteers'
 import { Route as AdminCommandCenterRouteImport } from './routes/admin/command-center'
@@ -67,6 +69,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VolunteerIndexRoute = VolunteerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => VolunteerRoute,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VolunteerDashboardRoute = VolunteerDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -96,6 +108,8 @@ export interface FileRoutesByFullPath {
   '/admin/command-center': typeof AdminCommandCenterRoute
   '/admin/volunteers': typeof AdminVolunteersRoute
   '/volunteer/dashboard': typeof VolunteerDashboardRoute
+  '/admin/': typeof AdminIndexRoute
+  '/volunteer/': typeof VolunteerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -106,10 +120,11 @@ export interface FileRoutesByTo {
   '/partners': typeof PartnersRoute
   '/peer-match': typeof PeerMatchRoute
   '/resources': typeof ResourcesRoute
-  '/volunteer': typeof VolunteerRouteWithChildren
   '/admin/command-center': typeof AdminCommandCenterRoute
   '/admin/volunteers': typeof AdminVolunteersRoute
   '/volunteer/dashboard': typeof VolunteerDashboardRoute
+  '/admin': typeof AdminIndexRoute
+  '/volunteer': typeof VolunteerIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,6 +140,8 @@ export interface FileRoutesById {
   '/admin/command-center': typeof AdminCommandCenterRoute
   '/admin/volunteers': typeof AdminVolunteersRoute
   '/volunteer/dashboard': typeof VolunteerDashboardRoute
+  '/admin/': typeof AdminIndexRoute
+  '/volunteer/': typeof VolunteerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,6 +158,8 @@ export interface FileRouteTypes {
     | '/admin/command-center'
     | '/admin/volunteers'
     | '/volunteer/dashboard'
+    | '/admin/'
+    | '/volunteer/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -151,10 +170,11 @@ export interface FileRouteTypes {
     | '/partners'
     | '/peer-match'
     | '/resources'
-    | '/volunteer'
     | '/admin/command-center'
     | '/admin/volunteers'
     | '/volunteer/dashboard'
+    | '/admin'
+    | '/volunteer'
   id:
     | '__root__'
     | '/'
@@ -169,6 +189,8 @@ export interface FileRouteTypes {
     | '/admin/command-center'
     | '/admin/volunteers'
     | '/volunteer/dashboard'
+    | '/admin/'
+    | '/volunteer/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -183,6 +205,7 @@ export interface RootRouteChildren {
   VolunteerRoute: typeof VolunteerRouteWithChildren
   AdminCommandCenterRoute: typeof AdminCommandCenterRoute
   AdminVolunteersRoute: typeof AdminVolunteersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -250,6 +273,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/volunteer/': {
+      id: '/volunteer/'
+      path: '/'
+      fullPath: '/volunteer/'
+      preLoaderRoute: typeof VolunteerIndexRouteImport
+      parentRoute: typeof VolunteerRoute
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/volunteer/dashboard': {
       id: '/volunteer/dashboard'
       path: '/dashboard'
@@ -276,10 +313,12 @@ declare module '@tanstack/react-router' {
 
 interface VolunteerRouteChildren {
   VolunteerDashboardRoute: typeof VolunteerDashboardRoute
+  VolunteerIndexRoute: typeof VolunteerIndexRoute
 }
 
 const VolunteerRouteChildren: VolunteerRouteChildren = {
   VolunteerDashboardRoute: VolunteerDashboardRoute,
+  VolunteerIndexRoute: VolunteerIndexRoute,
 }
 
 const VolunteerRouteWithChildren = VolunteerRoute._addFileChildren(
@@ -298,6 +337,7 @@ const rootRouteChildren: RootRouteChildren = {
   VolunteerRoute: VolunteerRouteWithChildren,
   AdminCommandCenterRoute: AdminCommandCenterRoute,
   AdminVolunteersRoute: AdminVolunteersRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

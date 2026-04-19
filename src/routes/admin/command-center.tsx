@@ -110,11 +110,11 @@ function CommandCenter() {
                <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Governance Command Center</span>
             </div>
-            <h1 className="text-4xl font-display font-black">Platform Oversight 🦅</h1>
-            <p className="text-slate-500 mt-2">Monitoring the SoulSync healing movement in real-time.</p>
+            <h1 className="text-4xl font-display font-black text-[#0f172a]">Master Control 🦅</h1>
+            <p className="text-slate-500 mt-2 font-medium">Supervisor-level oversight of all SoulSync operations and personnel.</p>
           </div>
           <Button variant="outline" onClick={() => navigate({ to: '/volunteer/dashboard' })} className="rounded-2xl border-slate-200">
-             <ArrowLeft className="h-4 w-4 mr-2" /> Back to Staff Hub
+             <ArrowLeft className="h-4 w-4 mr-2" /> Exit to Volunteer View
           </Button>
         </div>
 
@@ -159,8 +159,8 @@ function CommandCenter() {
            <div className="lg:col-span-2 space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-black flex items-center gap-2">
-                   <Users className="h-5 w-5 text-primary" />
-                   Volunteer Governance
+                   <ShieldCheck className="h-5 w-5 text-primary" />
+                   Personnel Supervision
                 </h2>
                 <Button variant="ghost" size="sm" className="text-xs font-bold text-primary">View All Queue</Button>
               </div>
@@ -218,8 +218,8 @@ function CommandCenter() {
            {/* Global Activity Feed */}
            <div className="space-y-6">
               <h2 className="text-xl font-black flex items-center gap-2">
-                 <Activity className="h-5 w-5 text-safe" />
-                 Global Session Feed
+                 <Eye className="h-5 w-5 text-safe" />
+                 Live Session Surveillance
               </h2>
               <div className="space-y-4">
                  {sessions.map(session => (
