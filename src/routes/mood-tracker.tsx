@@ -1,12 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { MoodSelector, type MoodType } from "@/components/MoodSelector";
 import { MoodChart } from "@/components/MoodChart";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar, TrendingUp } from "lucide-react";
+import { Plus, Calendar, TrendingUp, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { useAnonymousIdentity } from "@/hooks/useAnonymousIdentity";
+import { format } from "date-fns";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/mood-tracker")({
   component: MoodTrackerPage,
@@ -37,14 +41,63 @@ const moodEmojis: Record<MoodType, string> = {
 };
 
 function MoodTrackerPage() {
-  const [entries] = useState<MoodEntry[]>(initialEntries);
+  const { aliasId, isLoading: identityLoading } = useAnonymousIdentity();
+  const [entries, setEntries] = useState<MoodEntry[]>([]);
+  const [loadingEntries, setLoadingEntries] = useState(true);
   const [todayMood, setTodayMood] = useState<MoodType | undefined>();
   const [note, setNote] = useState("");
   const [showLog, setShowLog] = useState(false);
 
-  const logMood = () => {
-    if (!todayMood) return;
-    setShowLog(true);
+  const fetchEntries = async () => {
+    if (!aliasId) return;
+    setLoadingEntries(true);
+    const { data, error } = await supabase
+      .from("mood_entries")
+      .select("*")
+      .eq("alias_id", aliasId)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching moods:", error);
+    } else {
+      const formattedEntries: MoodEntry[] = (data || []).map(d => ({
+        date: format(new Date(d.created_at), "EEE"), // "Mon", "Tue" etc
+        mood: d.mood as MoodType,
+        note: d.note || ""
+      }));
+      setEntries(formattedEntries);
+    }
+    setLoadingEntries(false);
+  };
+
+  useEffect(() => {
+    if (aliasId) {
+      fetchEntries();
+    }
+  }, [aliasId]);
+
+  const logMood = async () => {
+    if (!todayMood || !aliasId) return;
+    
+    setLoadingEntries(true);
+    const { error } = await supabase
+      .from("mood_entries")
+      .insert({
+        alias_id: aliasId,
+        mood: todayMood,
+        note: note.trim() || null,
+      });
+
+    if (error) {
+      toast.error("Failed to save mood. Please try again.");
+      setLoadingEntries(false);
+    } else {
+      toast.success("Mood recorded successfully!");
+      setShowLog(true);
+      setNote("");
+      setTodayMood(undefined);
+      fetchEntries();
+    }
   };
 
   return (
@@ -100,24 +153,35 @@ function MoodTrackerPage() {
         {/* History */}
         <div className="mt-6 rounded-2xl border bg-card p-6">
           <h2 className="font-display text-lg font-semibold mb-4">Recent Entries</h2>
-          <div className="space-y-3">
-            {[...entries].reverse().map((entry, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="flex items-center gap-4 rounded-xl border p-3"
-              >
-                <span className="text-2xl">{moodEmojis[entry.mood]}</span>
-                <div className="flex-1">
-                  <div className="text-sm font-medium capitalize">{entry.mood}</div>
-                  {entry.note && <div className="text-xs text-muted-foreground">{entry.note}</div>}
-                </div>
-                <span className="text-xs text-muted-foreground">{entry.date}</span>
-              </motion.div>
-            ))}
-          </div>
+          {loadingEntries || identityLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary/50" />
+            </div>
+          ) : entries.length === 0 ? (
+            <div className="text-center py-8 space-y-2">
+              <p className="text-sm text-muted-foreground">No mood entries yet.</p>
+              <p className="text-xs text-slate-400">Your journey starts with your first log today!</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {[...entries].reverse().map((entry, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="flex items-center gap-4 rounded-xl border p-3 bg-white/50"
+                >
+                  <span className="text-2xl">{moodEmojis[entry.mood]}</span>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium capitalize">{entry.mood}</div>
+                    {entry.note && <div className="text-xs text-muted-foreground">{entry.note}</div>}
+                  </div>
+                  <span className="text-xs text-muted-foreground font-medium">{entry.date}</span>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       <Footer />

@@ -40,18 +40,20 @@ function AdminVolunteersPage() {
   }, []);
 
   const handleVerify = async (id: string, approve: boolean) => {
+    setLoading(true);
     const { error } = await supabase
       .from("volunteers")
       .update({ 
         verification_status: approve ? "verified" : "rejected",
-        is_verified: approve // This column is used for public visibility filtering
+        is_verified: approve,
+        is_active: approve // Automatically set to active if approved
       })
       .eq("id", id);
 
     if (error) {
-      toast.error("Process failed");
+      toast.error("Process failed: " + error.message);
     } else {
-      toast.success(approve ? "Volunteer approved!" : "Volunteer rejected");
+      toast.success(approve ? "Volunteer approved! They are now live." : "Volunteer application rejected.");
       fetchVolunteers();
     }
   };
@@ -128,13 +130,13 @@ function AdminVolunteersPage() {
                           href={vol.cv_url} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="flex items-center justify-center gap-2 w-full py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors"
+                          className="flex items-center justify-center gap-2 w-full py-3 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg active:scale-[0.98]"
                         >
-                          <FileText className="h-3.5 w-3.5" /> View CV <ExternalLink className="h-3 w-3" />
+                          <FileText className="h-4 w-4" /> View Credentials <ExternalLink className="h-3 w-3" />
                         </a>
                       ) : (
-                        <div className="text-center py-2 text-xs text-amber-600 bg-amber-50 rounded-xl border border-amber-100 flex items-center justify-center gap-1.5 font-medium">
-                          <ShieldAlert className="h-3.5 w-3.5" /> No CV Found
+                        <div className="text-center py-3 text-[10px] text-amber-600 bg-amber-50 rounded-2xl border border-amber-100 flex items-center justify-center gap-2 font-black uppercase tracking-wider">
+                          <ShieldAlert className="h-4 w-4" /> CV missing or private
                         </div>
                       )}
                       

@@ -1,12 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { MoodSelector, type MoodType } from "@/components/MoodSelector";
 import { MoodChart } from "@/components/MoodChart";
 import { Button } from "@/components/ui/button";
-import { MessageCircleHeart, BookOpen, TrendingUp, Users, Shield, Sparkles } from "lucide-react";
+import { MessageCircleHeart, BookOpen, TrendingUp, Users, Shield, Sparkles, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { useAnonymousIdentity } from "@/hooks/useAnonymousIdentity";
+import { format } from "date-fns";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/check-in")({
   component: CheckInPage,
@@ -19,7 +23,59 @@ const quickActions = [
 ];
 
 function CheckInPage() {
+  const { aliasId, isLoading: identityLoading } = useAnonymousIdentity();
   const [selectedMood, setSelectedMood] = useState<MoodType | undefined>();
+  const [moodEntries, setMoodEntries] = useState<any[]>([]);
+  const [loadingChart, setLoadingChart] = useState(true);
+
+  const fetchMoodHistory = async () => {
+    if (!aliasId) return;
+    setLoadingChart(true);
+    const { data } = await supabase
+      .from("mood_entries")
+      .select("*")
+      .eq("alias_id", aliasId)
+      .order("created_at", { ascending: false }) // Get newest first
+      .limit(7);
+    
+    if (data) {
+      // Reverse to show chronological order on chart
+      const formatted = data.reverse().map(d => {
+        const dateObj = new Date(d.created_at);
+        return {
+          // If we have multiple entries on same day, show time
+          date: format(dateObj, "EEE p"), 
+          mood: d.mood as MoodType
+        };
+      });
+      setMoodEntries(formatted);
+    }
+    setLoadingChart(false);
+  };
+
+  useEffect(() => {
+    if (aliasId) {
+      fetchMoodHistory();
+    }
+  }, [aliasId]);
+
+  const handleMoodSelect = async (mood: MoodType) => {
+    setSelectedMood(mood);
+    if (!aliasId) return;
+
+    const { error } = await supabase
+      .from("mood_entries")
+      .insert({
+        alias_id: aliasId,
+        mood: mood,
+        note: "Quick check-in from dashboard"
+      });
+
+    if (!error) {
+      toast.success("Mood recorded! ✨");
+      fetchMoodHistory();
+    }
+  };
 
   return (
     <div className="min-h-screen pt-16">
@@ -38,7 +94,7 @@ function CheckInPage() {
           className="mt-8 rounded-2xl border bg-card p-6"
         >
           <h2 className="font-display text-lg font-semibold mb-4 text-center">Quick Check-In</h2>
-          <MoodSelector selected={selectedMood} onSelect={setSelectedMood} />
+          <MoodSelector selected={selectedMood} onSelect={handleMoodSelect} />
           {selectedMood && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 text-center">
               <p className="text-sm text-muted-foreground">
@@ -81,7 +137,13 @@ function CheckInPage() {
               <h2 className="font-display text-lg font-semibold">Your Mood Journey</h2>
               <span className="text-xs text-muted-foreground">Last 7 days</span>
             </div>
-            <MoodChart />
+            {loadingChart || identityLoading ? (
+              <div className="h-64 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
+              </div>
+            ) : (
+              <MoodChart data={moodEntries.length > 0 ? moodEntries : undefined} />
+            )}
           </div>
         </div>
 

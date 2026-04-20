@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,10 @@ function formatVolunteerErrorMessage(message: string) {
 
   if (message.includes("row-level security policy")) {
     return "The volunteer profile could not be saved because the database rejected the request. Run the latest Supabase migration and try again.";
+  }
+
+  if (message.includes("Bucket not found")) {
+    return "CV Upload failed: The storage bucket 'volunteers-cvs' was not found. Please follow the setup instructions in volunteer_storage_setup.md.";
   }
 
   return message;
@@ -264,6 +268,25 @@ function VolunteerPage() {
                     </button>
                   ))}
                 </div>
+                {languages.includes("Other") && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-2">
+                    <input
+                      placeholder="Specify other languages..."
+                      className="w-full rounded-xl border bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setLanguages(prev => {
+                          const otherIdx = prev.indexOf("Other");
+                          const filtered = prev.filter(l => !l.startsWith("Other:"));
+                          if (val) {
+                            return [...filtered, `Other: ${val}`];
+                          }
+                          return filtered;
+                        });
+                      }}
+                    />
+                  </motion.div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5 flex items-center gap-2">
@@ -334,17 +357,27 @@ function VolunteerPage() {
 
         {/* Success */}
         {formState === "submitted" && (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="rounded-2xl border bg-card p-12 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-safe/10 mx-auto mb-4">
-              <CheckCircle className="h-8 w-8 text-safe" />
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="rounded-[2.5rem] border-none shadow-2xl bg-white p-12 text-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-safe/10 mx-auto mb-6">
+              <CheckCircle className="h-10 w-10 text-safe" />
             </div>
-            <h2 className="font-display text-xl font-semibold text-safe">Application Pending Review</h2>
-            <p className="mt-3 text-muted-foreground max-w-sm mx-auto">
-              Thank you for volunteering! Your CV is now being reviewed by our <strong>3 Super-Admins</strong>. 
+            <h2 className="font-display text-2xl font-black text-safe uppercase tracking-tight">Application Submitted!</h2>
+            <div className="mt-6 p-6 bg-slate-50 rounded-3xl border border-slate-100 max-w-sm mx-auto">
+              <p className="text-sm text-slate-600 font-medium italic">
+                "Your journey as a peer listener begins here. Every student's heart you touch matters."
+              </p>
+            </div>
+            
+            <p className="mt-8 text-muted-foreground max-w-sm mx-auto text-sm">
+              Your profile and CV are now pending review by our **SoulSync Team**. 
             </p>
-            <p className="mt-4 text-xs text-slate-400 max-w-sm mx-auto">
-              We verify every peer listener to ensure SoulSync remains the safest place for student healing. You will receive an email once your profile is verified.
+            <p className="mt-4 text-[11px] text-slate-400 max-w-xs mx-auto leading-relaxed">
+              We verify all responders manually to keep SoulSync a safe sanctuary. You'll be notified at <strong>{email}</strong> once verified.
             </p>
+            
+            <Link to="/">
+              <Button variant="outline" className="mt-8 rounded-xl px-8">Return Home</Button>
+            </Link>
           </motion.div>
         )}
 

@@ -27,7 +27,14 @@ SoulSync protects students through a **Zero-Trace Identity Pipeline**:
 | :--- | :--- | :--- |
 | `alias_id` | UUID (PK) | Primary anonymous identifier |
 | `memory_context` | TEXT | AI-synthesized bullet points of user history |
-| `primary_volunteer_id`| UUID | Linked volunteer for continuity |
+| `recovery_hash` | TEXT | Optional hash for identity recovery |
+
+### `mood_entries`
+| Column | Type | Purpose |
+| :--- | :--- | :--- |
+| `alias_id` | UUID (FK) | Link to student identity |
+| `mood` | TEXT | The recorded emotion (great, good, etc.) |
+| `note` | TEXT | Quick journal entries for the "Healing Curve" |
 
 ### `session_bookings` (The CRM Layer)
 | Column | Type | Purpose |
@@ -63,19 +70,20 @@ The following functions can be tested via the `/utils/chat.functions.ts` server 
 ```
 
 ## 5. Route Map
--   `/`: Landing Page (Movement Vision, Live Ticker, Impact Dashboard).
+-   `/check-in`: Quick Mood Check-In & Healing Curve Visualization.
+-   `/mood-tracker`: Detailed Mood Journal & Emotional History.
 -   `/chat`: The AI Companion Interface (Multilingual Indian context support).
 -   `/peer-match`: Anonymous Peer Matching (8-Question Psych Survey).
--   `/volunteer/dashboard`: Peer Supporter Hub (AI Briefing & Session Logs).
--   `/admin`: **Master Control Login** (Dedicated entry for Super-Admins).
--   `/admin/command-center`: **Governance Hub** (Oversight, Personnel Supervision, and Live Surveillance).
+-   `/volunteer`: Volunteer Onboarding (CV Upload & Profile setup).
+-   `/admin`: **Master Control Login** (Dedicated entry for SoulSync Team).
+-   `/admin/volunteers`: **Verification Hub** (CV Review & Application Approval).
 -   `/partners`: NGO Philanthropic Hub & Donation Gateway.
 
 ## 6. Project Highlights (Hackathon Ready)
+-   **True Persistence**: High-integrity anonymous mood data saved to Supabase (Zero-Trace).
+-   **Verification Workflow**: Multi-stage volunteer onboarding with CV storage and Admin approval.
 -   **Multilingual AI**: Real-time switching between English, Hindi, and Hinglish.
--   **Boss-Level Governance**: Dedicated Supervision portal for platform administrators.
--   **Circular Healing**: Integrated (simulated) payment gateway for NGO contributions.
--   **Zero-Trace Identity**: Local-only Alias UUID protocol for absolute student safety.
+-   **Governance Core**: Dedicated supervision portal for platform administrators.
 
 ## 7. Admin Credentials
 The following admins are authorized in the database:
@@ -86,8 +94,9 @@ The following admins are authorized in the database:
 ## 8. Setup & Installation
 1.  **Dependencies**: `bun install`
 2.  **Environment**: Create `.env` with `GEMINI_API_KEY` and `VITE_SUPABASE_URL`.
-3.  **Migrations**: Run SQL files in `/supabase/migrations/`.
-4.  **Dev Server**: `bun dev`
+3.  **Storage**: Create a **Public** bucket named `volunteers-cvs` in Supabase.
+4.  **Migrations**: Run SQL files in `/supabase/migrations/` (Run `20260420_mood_entries.sql` for the core schema).
+5.  **Dev Server**: `bun dev`
 
 ---
 **Build for the Google Solution Challenge 2026**

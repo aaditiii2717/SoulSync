@@ -159,8 +159,8 @@ function PeerMatchPage() {
     },
     { 
       id: "language", 
-      q: "Preferred language for chat?", 
-      options: ["English", "Hindi", "Tamil/Telugu", "Mixed"] 
+      q: "In which language are you most comfortable expressing your feelings?", 
+      options: ["English", "Hindi", "Tamil", "Telugu", "Mixed / Hinglish"] 
     },
     { 
       id: "depth", 
@@ -344,7 +344,7 @@ function PeerMatchPage() {
               Book a <span className="text-gradient">Support Session</span>
             </h1>
             <p className="mt-3 text-muted-foreground max-w-lg mx-auto">
-              Connect with an available peer supporter. Choose your issue, pick a supporter, and book a time, all anonymously.
+              Connect with an available peer supporter. Your safety is ensured by the **SoulSync Team** review process.
             </p>
           </div>
 
