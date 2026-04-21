@@ -174,7 +174,7 @@ export function IdentityRecoveryButton({ className }: IdentityRecoveryButtonProp
 
   const buttonLabel = profileUsername
     ? `Hello, ${profileUsername} 👋`
-    : "⚠️ Protect your records from being lost";
+    : "⚠️ Login / Secure Account";
   const isButtonLoading = !aliasId || profileLoading;
   const maskedStoredRecoveryKey = storedRecoveryKey
     ? "•".repeat(Math.max(12, storedRecoveryKey.length))
@@ -410,7 +410,7 @@ export function IdentityRecoveryButton({ className }: IdentityRecoveryButtonProp
                   : view === "recover"
                     ? "Recover My Account"
                     : setupStep === 1
-                      ? "Protect your records before they're lost"
+                      ? "Login"
                       : "Create your recovery key"}
               </DialogTitle>
               <DialogDescription className="max-w-xl text-sm leading-relaxed">
@@ -543,7 +543,7 @@ export function IdentityRecoveryButton({ className }: IdentityRecoveryButtonProp
               <>
                 <div className="grid gap-3">
                   <label className="text-sm font-medium" htmlFor="recovery-username">
-                    Choose a username
+                    Choose an anonymous username
                   </label>
                   <Input
                     id="recovery-username"
