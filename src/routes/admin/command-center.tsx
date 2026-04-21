@@ -16,6 +16,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, Cell 
 } from 'recharts';
+import { sendEmail } from "@/lib/email";
 
 export const Route = createFileRoute("/admin/command-center")({
   component: CommandCenter,
@@ -85,6 +86,25 @@ function CommandCenter() {
       toast.error("Governance action failed.");
     } else {
       toast.success(`Volunteer ${status === 'verified' ? 'Approved' : 'Rejected'}`);
+      
+      if (status === 'verified') {
+        const vol = volunteers.find(v => v.id === id);
+        if (vol && vol.email) {
+          sendEmail({
+            data: {
+              to: vol.email,
+              subject: "Your volunteer application has been approved! 🎉",
+              html: `<h3>Hello ${vol.name || 'Volunteer'}!</h3>
+               <p>Congratulations, your application to volunteer at SoulSync has been approved! 🎉</p>
+               <p>You can now log in, set your availability, and start accepting peer support sessions.</p>
+               <p><a href="${window.location.origin}/volunteer/dashboard">Click here to access your Volunteer Dashboard</a></p>
+               <br/>
+               <p>Thank you for supporting our community!</p>`
+            }
+          });
+        }
+      }
+
       fetchGlobalData();
     }
   };

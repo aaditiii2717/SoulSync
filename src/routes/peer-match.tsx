@@ -13,8 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { useAnonymousIdentity } from "@/hooks/useAnonymousIdentity";
-
 import { sendChatMessage, updateChatMemory, generateVolunteerBriefing, updatePostSessionMemory } from "@/utils/chat.functions";
+import { sendEmail } from "@/lib/email";
 
 export const Route = createFileRoute("/peer-match")({
   component: PeerMatchPage,
@@ -210,6 +210,7 @@ function PeerMatchPage() {
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [anonName, setAnonName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [showCrisis, setShowCrisis] = useState(false);
@@ -464,6 +465,7 @@ function PeerMatchPage() {
       notes: notes.trim() || null,
       meeting_token: newToken,
       handoff_briefing: sessionStorage.getItem("soulSync_handoffBriefing"),
+      student_alias_id: aliasId,
     }).select().single();
     
     if (insertError) {
@@ -500,6 +502,45 @@ function PeerMatchPage() {
           }
         : null,
     });
+
+    // Send Emails
+    const roomId = newBooking ? newBooking.id : newToken;
+    
+    // Trigger 2: To User (if email provided)
+    if (userEmail.trim()) {
+      sendEmail({
+        data: {
+          to: userEmail.trim(),
+          subject: "Your peer support session is confirmed ✅",
+          html: `<h3>Session Confirmed</h3>
+          <p>Your session with <strong>${selectedVolunteer?.name}</strong> is scheduled for <strong>${selectedSlot?.slot_date}</strong> at <strong>${selectedSlot?.start_time.slice(0, 5)}</strong>.</p>
+          <p>Room ID: <strong>SoulSync-Session-${roomId}</strong></p>
+          <p><a href="https://meet.jit.si/SoulSync-Session-${roomId}">Click to join the meeting at the scheduled time</a></p>
+          <p><em>(Your credentials and meeting link will also remain visible on the Peer Support page)</em></p>`
+        }
+      });
+    }
+
+    // Trigger 3: To Volunteer (fetch their email first)
+    if (selectedVolunteer) {
+      const { data: volData } = await supabase
+        .from("volunteers")
+        .select("email")
+        .eq("id", selectedVolunteer.id)
+        .single();
+        
+      if (volData?.email) {
+        sendEmail({
+          data: {
+            to: volData.email,
+            subject: "You have a new session booking 📅",
+            html: `<h3>New Session Booking!</h3>
+            <p><strong>${anonName.trim() || "Anonymous"}</strong> has booked a session with you on <strong>${selectedSlot?.slot_date}</strong> at <strong>${selectedSlot?.start_time.slice(0, 5)}</strong>.</p>
+            <p><a href="${window.location.origin}/volunteer/dashboard">Click here to log into your dashboard and view details</a></p>`
+          }
+        });
+      }
+    }
 
     setLoading(false);
     setStep("booked");
@@ -545,6 +586,7 @@ function PeerMatchPage() {
     setSelectedVolunteer(null);
     setSelectedSlot(null);
     setAnonName("");
+    setUserEmail("");
     setNotes("");
     setHasJoined(false);
     setMoodRating(null);
@@ -957,6 +999,18 @@ function PeerMatchPage() {
                         value={anonName}
                         onChange={(e) => setAnonName(e.target.value)}
                         placeholder="Anonymous"
+                        className="w-full rounded-xl border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1.5">
+                        Email for Confirmation <span className="text-muted-foreground font-normal">(optional, kept private)</span>
+                      </label>
+                      <input
+                        value={userEmail}
+                        type="email"
+                        onChange={(e) => setUserEmail(e.target.value)}
+                        placeholder="your@email.com"
                         className="w-full rounded-xl border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
                     </div>
