@@ -223,23 +223,14 @@ function PeerMatchPage() {
   const [feedbackNotes, setFeedbackNotes] = useState("");
   const [primaryVolunteerId, setPrimaryVolunteerId] = useState<string | null>(null);
 
-  // ── Guaranteed identity (creates a student_profile row + UUID on first visit,
-  //    persists to DB, recoverable via username+key — never null after load) ──
-<<<<<<< HEAD
-  const { aliasId, isLoading: identityLoading } = useAnonymousIdentity();
-=======
+  // ── Guaranteed identity
   const { aliasId, profileExists, isLoading: identityLoading } = useAnonymousIdentity();
->>>>>>> 6904773 (feat: SoulSync full codebase - volunteer dashboard, peer match, identity, email, mood tracker, admin panel)
 
   // ── persistent booking state (reads from DB, survives navigation) ──────────
   const [myBooking, setMyBooking] = useState<any>(null);
   const [bookingLoading, setBookingLoading] = useState(true);
 
-<<<<<<< HEAD
-  const fetchMyBooking = async () => {
-=======
   const fetchMyBooking = async (currentAliasId?: string | null) => {
->>>>>>> 6904773 (feat: SoulSync full codebase - volunteer dashboard, peer match, identity, email, mood tracker, admin panel)
     setBookingLoading(true);
 
     const storedBookingId = localStorage.getItem("soulSync_last_booking_id");
@@ -251,10 +242,7 @@ function PeerMatchPage() {
 
     const SELECT_FIELDS = `
       id,
-<<<<<<< HEAD
-=======
       student_alias_id,
->>>>>>> 6904773 (feat: SoulSync full codebase - volunteer dashboard, peer match, identity, email, mood tracker, admin panel)
       meeting_token,
       anonymous_name,
       issue_type,
@@ -283,9 +271,7 @@ function PeerMatchPage() {
       return;
     }
 
-<<<<<<< HEAD
-=======
-    // Backfill student_alias_id if it was missing (e.g. booked before column was populated)
+    // Backfill student_alias_id if it was missing 
     const effectiveAlias = currentAliasId ?? localStorage.getItem("soulSync_alias_id");
     if (booking && !(booking as any).student_alias_id && effectiveAlias) {
       console.log("[fetchMyBooking] Backfilling student_alias_id for booking", storedBookingId);
@@ -295,14 +281,12 @@ function PeerMatchPage() {
         .eq("id", storedBookingId);
 
       if (backfillError) {
-        console.error("[fetchMyBooking] Backfill failed — check RLS UPDATE policy on session_bookings:", backfillError);
+        console.error("[fetchMyBooking] Backfill failed:", backfillError);
       } else {
-        // Patch the in-memory booking so the card reflects the linked alias immediately
         (booking as any).student_alias_id = effectiveAlias;
       }
     }
 
->>>>>>> 6904773 (feat: SoulSync full codebase - volunteer dashboard, peer match, identity, email, mood tracker, admin panel)
     const now = new Date();
     const slot = booking?.time_slots;
     if (slot && parseISO(`${slot.slot_date}T${slot.end_time}`) > now) {
@@ -314,26 +298,16 @@ function PeerMatchPage() {
     setBookingLoading(false);
   };
 
-<<<<<<< HEAD
-  // Run on mount
-=======
-  // Run on mount (without alias — just restores from localStorage)
->>>>>>> 6904773 (feat: SoulSync full codebase - volunteer dashboard, peer match, identity, email, mood tracker, admin panel)
   useEffect(() => {
     fetchMyBooking();
   }, []);
 
-<<<<<<< HEAD
-=======
-  // Re-run with aliasId once identity resolves so we can backfill student_alias_id
-  // on existing bookings that were created without it
   useEffect(() => {
     if (aliasId) {
       fetchMyBooking(aliasId);
     }
   }, [aliasId]);
 
->>>>>>> 6904773 (feat: SoulSync full codebase - volunteer dashboard, peer match, identity, email, mood tracker, admin panel)
   useEffect(() => {
     const fetchHistory = async () => {
       if (!aliasId) return;
@@ -493,120 +467,17 @@ function PeerMatchPage() {
     setStep("confirm");
   };
 
-  const handleBooking = async () => {
-    if (!selectedSlot) return;
-    setLoading(true);
-
-    // Mark slot as booked
-    await supabase
-      .from("time_slots")
-      .update({ is_booked: true })
-      .eq("id", selectedSlot.id);
-
-    const newToken = crypto.randomUUID().slice(0, 8);
-
-    const { data: newBooking, error: insertError } = await supabase.from("session_bookings").insert({
-      time_slot_id: selectedSlot.id,
-      anonymous_name: anonName.trim() || "Anonymous",
-      issue_type: selectedIssue,
-      notes: notes.trim() || null,
-      meeting_token: newToken,
-      handoff_briefing: sessionStorage.getItem("soulSync_handoffBriefing"),
-      student_alias_id: aliasId,
-    }).select().single();
-    
-    if (insertError) {
-      console.error("Booking insert error:", insertError);
-      toast.error("Failed to book the session. Please try again.");
-      setLoading(false);
-      return;
-    }
-
-    setMeetingToken(newToken);
-
-    if (newBooking) {
-      localStorage.setItem("soulSync_last_booking_id", newBooking.id);
-    }
-
-    // Immediately populate the booking card from in-scope state so it shows
-    // without waiting for a DB round-trip (no race condition).
-    // On the next mount fetchMyBooking will sync from the database using aliasId.
-    setMyBooking({
-      id: newBooking ? newBooking.id : "pending",
-      meeting_token: newToken,
-      anonymous_name: anonName.trim() || "Anonymous",
-      issue_type: selectedIssue,
-      status: "pending",
-      notes: notes.trim() || null,
-      time_slots: selectedSlot
-        ? {
-            slot_date: selectedSlot.slot_date,
-            start_time: selectedSlot.start_time,
-            end_time: selectedSlot.end_time,
-            volunteers: selectedVolunteer
-              ? { id: selectedVolunteer.id, name: selectedVolunteer.name }
-              : null,
-          }
-        : null,
-    });
-
-    // Send Emails
-    const roomId = newBooking ? newBooking.id : newToken;
-    
-    // Trigger 2: To User (if email provided)
-    if (userEmail.trim()) {
-      sendEmail({
-        data: {
-          to: userEmail.trim(),
-          subject: "Your peer support session is confirmed ✅",
-          html: `<h3>Session Confirmed</h3>
-          <p>Your session with <strong>${selectedVolunteer?.name}</strong> is scheduled for <strong>${selectedSlot?.slot_date}</strong> at <strong>${selectedSlot?.start_time.slice(0, 5)}</strong>.</p>
-          <p>Room ID: <strong>SoulSync-Session-${roomId}</strong></p>
-          <p><a href="https://meet.jit.si/SoulSync-Session-${roomId}">Click to join the meeting at the scheduled time</a></p>
-          <p><em>(Your credentials and meeting link will also remain visible on the Peer Support page)</em></p>`
-        }
-      });
-    }
-
-    // Trigger 3: To Volunteer (fetch their email first)
-    if (selectedVolunteer) {
-      const { data: volData } = await supabase
-        .from("volunteers")
-        .select("email")
-        .eq("id", selectedVolunteer.id)
-        .single();
-        
-      if (volData?.email) {
-        sendEmail({
-          data: {
-            to: volData.email,
-            subject: "You have a new session booking 📅",
-            html: `<h3>New Session Booking!</h3>
-            <p><strong>${anonName.trim() || "Anonymous"}</strong> has booked a session with you on <strong>${selectedSlot?.slot_date}</strong> at <strong>${selectedSlot?.start_time.slice(0, 5)}</strong>.</p>
-            <p><a href="${window.location.origin}/volunteer/dashboard">Click here to log into your dashboard and view details</a></p>`
-          }
-        });
-      }
-    }
-
-    setLoading(false);
-    setStep("booked");
-  };
-
-<<<<<<< HEAD
-=======
   const handleBookingSafe = async () => {
     if (!selectedSlot || !selectedVolunteer || loading) return;
 
-    // Warn if identity hasn't resolved yet, but don't block — the backfill
-    // in fetchMyBooking will link the alias once the student revisits this page.
     if (!aliasId) {
-      console.warn("[handleBookingSafe] aliasId is null — booking will proceed without alias link (will be backfilled on next visit).");
+      console.warn("[handleBookingSafe] aliasId is null — booking will proceed without alias link.");
     }
 
     setLoading(true);
 
     try {
+      // 1. Transaction-like slot reservation
       const { data: reservedSlot, error: reserveError } = await supabase
         .from("time_slots")
         .update({ is_booked: true })
@@ -615,9 +486,7 @@ function PeerMatchPage() {
         .select("id")
         .maybeSingle();
 
-      if (reserveError) {
-        throw reserveError;
-      }
+      if (reserveError) throw reserveError;
 
       if (!reservedSlot) {
         toast.error("That slot was just taken. Please choose another one.");
@@ -627,10 +496,8 @@ function PeerMatchPage() {
       }
 
       const newToken = crypto.randomUUID().slice(0, 8);
-      const selectedLanguage =
-        surveyAnswers.language?.replace("Mixed / ", "") || "English";
+      const selectedLanguage = surveyAnswers.language?.replace("Mixed / ", "") || "English";
 
-      const safeAliasId = profileExists ? aliasId : null;
       const bookingPayload = {
         time_slot_id: selectedSlot.id,
         anonymous_name: anonName.trim() || "Anonymous",
@@ -639,10 +506,7 @@ function PeerMatchPage() {
         notes: notes.trim() || null,
         meeting_token: newToken,
         handoff_briefing: sessionStorage.getItem("soulSync_handoffBriefing"),
-        // student_alias_id and volunteer_id are omitted here because the column
-        // does not yet exist in the Supabase schema cache (PGRST204).
-        // Run the migration in Supabase SQL Editor to add these columns, then
-        // reload the schema cache (API Settings → Reload) and re-enable them.
+        student_alias_id: profileExists ? aliasId : null,
       };
 
       const { data: newBooking, error: insertError } = await supabase
@@ -694,51 +558,40 @@ function PeerMatchPage() {
             html: `<h3>Session Confirmed</h3>
             <p>Your session with <strong>${selectedVolunteer.name}</strong> is scheduled for <strong>${selectedSlot.slot_date}</strong> at <strong>${selectedSlot.start_time.slice(0, 5)}</strong>.</p>
             <p>Room ID: <strong>SoulSync-Session-${roomId}</strong></p>
-            <p><a href="https://meet.jit.si/SoulSync-Session-${roomId}">Click to join the meeting at the scheduled time</a></p>
-            <p><em>Your meeting link will also remain visible on the Peer Support page.</em></p>`,
+            <p><a href="https://meet.jit.si/SoulSync-Session-${roomId}">Click to join the meeting at the scheduled time</a></p>`
           }
-        }).catch((emailError) => {
-          console.error("User confirmation email error:", emailError);
-        });
+        }).catch(console.error);
       }
 
-      const { data: volunteerEmailRow, error: volunteerEmailError } = await supabase
+      const { data: volunteerEmailRow } = await supabase
         .from("volunteers")
         .select("email")
         .eq("id", selectedVolunteer.id)
         .single();
 
-      if (volunteerEmailError) {
-        console.error("Volunteer email fetch error:", volunteerEmailError);
-      } else if (volunteerEmailRow?.email) {
+      if (volunteerEmailRow?.email) {
         void sendEmail({
           data: {
             to: volunteerEmailRow.email,
             subject: "You have a new session booking",
             html: `<h3>New Session Booking</h3>
             <p><strong>${anonName.trim() || "Anonymous"}</strong> has booked a session with you on <strong>${selectedSlot.slot_date}</strong> at <strong>${selectedSlot.start_time.slice(0, 5)}</strong>.</p>
-            <p><a href="${window.location.origin}/volunteer/dashboard">Click here to log into your dashboard and view details</a></p>`,
+            <p><a href="${window.location.origin}/volunteer/dashboard">Click here to log into your dashboard and view details</a></p>`
           }
-        }).catch((emailError) => {
-          console.error("Volunteer notification email error:", emailError);
-        });
+        }).catch(console.error);
       }
     } catch (bookingError: any) {
       console.error("Booking error:", bookingError);
-      toast.error(
-        bookingError?.message || "Failed to confirm the booking. Please try again."
-      );
+      toast.error(bookingError?.message || "Failed to confirm the booking. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
->>>>>>> 6904773 (feat: SoulSync full codebase - volunteer dashboard, peer match, identity, email, mood tracker, admin panel)
   const handleFeedback = async () => {
     if (moodRating === null) return;
     setLoading(true);
 
-    // Update booking with feedback
     await supabase
       .from("session_bookings")
       .update({
@@ -747,7 +600,6 @@ function PeerMatchPage() {
       })
       .eq("meeting_token", meetingToken);
 
-    // AI POST-SESSION PERSISTENCE
     const briefing = sessionStorage.getItem("soulSync_handoffBriefing") || "";
 
     if (aliasId) {
@@ -761,7 +613,7 @@ function PeerMatchPage() {
     }
 
     setLoading(false);
-    setStep("booked"); // Return to confirmation screen or dashboard
+    setStep("booked");
     toast.success("Thank you for your feedback! Your journey is being safely recorded.");
     setTimeout(() => {
         window.location.href = "/";
@@ -791,7 +643,6 @@ function PeerMatchPage() {
         if (report.summary) {
           setNotes(`--- AI Supported Chat Report ---\n${report.summary}\n\nChat Preview:\n${report.chatPreview}\n-----------------------------`);
           
-          // Try to map top emotion to issue type
           const topEmotion = report.emotions?.[0]?.toLowerCase();
           if (topEmotion === "nervousness" || topEmotion === "fear" || topEmotion === "anxiety") {
             setSelectedIssue("anxiety");
@@ -951,7 +802,6 @@ function PeerMatchPage() {
 
           {/* Flow Steps */}
           <AnimatePresence mode="wait">
-            {/* Step 1: Select Issue */}
             {step === "issue" && (
               <motion.div key="issue" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                 <h2 className="font-display text-lg font-semibold mb-4 text-center">
@@ -972,7 +822,6 @@ function PeerMatchPage() {
               </motion.div>
             )}
 
-            {/* Step 2: Matching Survey */}
             {step === "survey" && (
               <motion.div key="survey" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <Card className="p-8 bg-white shadow-xl rounded-[2.5rem] border-none">
@@ -1035,16 +884,9 @@ function PeerMatchPage() {
                 </div>
                 {loading ? (
                   <div className="text-center py-12 text-muted-foreground">Loading supporters...</div>
-                ) : sortedVolunteers.length === 0 ? (
-                  <Card className="p-8 text-center">
-                    <p className="text-muted-foreground">No supporters available for this topic right now.</p>
-                    <Button variant="outline" className="mt-4 rounded-xl" onClick={() => setStep("issue")}>
-                      Try Another Topic
-                    </Button>
-                  </Card>
                 ) : (
                   <div className="space-y-3">
-                    {sortedVolunteers.map((vol, index) => (
+                    {sortedVolunteers.map((vol) => (
                       <Card
                         key={vol.id}
                         className="p-5 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all"
@@ -1066,9 +908,7 @@ function PeerMatchPage() {
                             )}
                             <div className="flex flex-wrap gap-1.5 mt-2">
                               {vol.expertise.map((exp) => (
-                                <span key={exp} className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                                  {exp}
-                                </span>
+                                <span key={exp} className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{exp}</span>
                               ))}
                               {vol.languages.map((lang) => (
                                 <span key={lang} className="rounded-full bg-calm/10 px-2 py-0.5 text-xs text-calm">
@@ -1086,74 +926,53 @@ function PeerMatchPage() {
               </motion.div>
             )}
 
-            {/* Step 3: Time Slot Selection */}
             {step === "slots" && (
               <motion.div key="slots" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-display text-lg font-semibold">
-                    Available Slots — {selectedVolunteer?.name}
-                  </h2>
-                  <Button variant="ghost" size="sm" onClick={() => setStep("volunteers")}>
-                    ← Back
-                  </Button>
+                  <h2 className="font-display text-lg font-semibold">Available Slots — {selectedVolunteer?.name}</h2>
+                  <Button variant="ghost" size="sm" onClick={() => setStep("volunteers")}>← Back</Button>
                 </div>
-                {loading ? (
-                  <div className="text-center py-12 text-muted-foreground">Loading time slots...</div>
-                ) : slots.length === 0 ? (
-                  <Card className="p-8 text-center">
-                    <p className="text-muted-foreground">No available slots for this supporter right now.</p>
-                    <Button variant="outline" className="mt-4 rounded-xl" onClick={() => setStep("volunteers")}>
-                      Choose Another Supporter
-                    </Button>
-                  </Card>
-                ) : (
-                  <div className="space-y-3">
-                    {/* Group by date */}
-                    {Object.entries(
-                      slots.reduce<Record<string, TimeSlot[]>>((acc, slot) => {
-                        const date = slot.slot_date;
-                        if (!acc[date]) acc[date] = [];
-                        acc[date].push(slot);
-                        return acc;
-                      }, {})
-                    ).map(([date, dateSlots]) => (
-                      <div key={date}>
-                        <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          {format(new Date(date + "T00:00:00"), "EEEE, MMMM d, yyyy")}
-                        </h3>
-                        <div className="flex flex-wrap gap-2">
-                          {dateSlots.map((slot) => (
-                            <Button
-                              key={slot.id}
-                              variant="outline"
-                              className="rounded-xl"
-                              onClick={() => handleSlotSelect(slot)}
-                            >
-                              <Clock className="h-4 w-4 mr-1.5" />
-                              {slot.start_time.slice(0, 5)} – {slot.end_time.slice(0, 5)}
-                            </Button>
-                          ))}
-                        </div>
+                <div className="space-y-3">
+                  {Object.entries(
+                    slots.reduce<Record<string, TimeSlot[]>>((acc, slot) => {
+                      const date = slot.slot_date;
+                      if (!acc[date]) acc[date] = [];
+                      acc[date].push(slot);
+                      return acc;
+                    }, {})
+                  ).map(([date, dateSlots]) => (
+                    <div key={date}>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        {format(new Date(date + "T00:00:00"), "EEEE, MMMM d, yyyy")}
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {dateSlots.map((slot) => (
+                          <Button
+                            key={slot.id}
+                            variant="outline"
+                            className="rounded-xl"
+                            onClick={() => handleSlotSelect(slot)}
+                          >
+                            <Clock className="h-4 w-4 mr-1.5" />
+                            {slot.start_time.slice(0, 5)} – {slot.end_time.slice(0, 5)}
+                          </Button>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  ))}
+                </div>
               </motion.div>
             )}
 
-            {/* Step 4: Confirm Booking */}
             {step === "confirm" && selectedSlot && selectedVolunteer && (
               <motion.div key="confirm" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                 <Card className="p-8">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="font-display text-lg font-semibold">Confirm Your Booking</h2>
-                    <Button variant="ghost" size="sm" onClick={() => setStep("slots")}>
-                      ← Back
-                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setStep("slots")}>← Back</Button>
                   </div>
 
-                  {/* Summary */}
                   <div className="rounded-xl bg-muted/50 p-4 space-y-2 mb-6">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Supporter</span>
@@ -1165,69 +984,49 @@ function PeerMatchPage() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Date</span>
-                      <span className="font-medium">
-                        {format(new Date(selectedSlot.slot_date + "T00:00:00"), "MMMM d, yyyy")}
-                      </span>
+                      <span className="font-medium">{format(new Date(selectedSlot.slot_date + "T00:00:00"), "MMMM d, yyyy")}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Time</span>
-                      <span className="font-medium">
-                        {selectedSlot.start_time.slice(0, 5)} – {selectedSlot.end_time.slice(0, 5)}
-                      </span>
+                      <span className="font-medium">{selectedSlot.start_time.slice(0, 5)} – {selectedSlot.end_time.slice(0, 5)}</span>
                     </div>
                   </div>
 
-                  {/* Anonymous name & notes */}
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1.5">
-                        Display Name <span className="text-muted-foreground font-normal">(anonymous is fine)</span>
-                      </label>
+                      <label className="block text-sm font-medium mb-1.5">Display Name</label>
                       <input
                         value={anonName}
                         onChange={(e) => setAnonName(e.target.value)}
                         placeholder="Anonymous"
-                        className="w-full rounded-xl border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full rounded-xl border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1.5">
-                        Email for Confirmation <span className="text-muted-foreground font-normal">(optional, kept private)</span>
-                      </label>
+                      <label className="block text-sm font-medium mb-1.5">Email (optional)</label>
                       <input
                         value={userEmail}
                         type="email"
                         onChange={(e) => setUserEmail(e.target.value)}
                         placeholder="your@email.com"
-                        className="w-full rounded-xl border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full rounded-xl border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1.5">
-                        Anything you&apos;d like the supporter to know? <span className="text-muted-foreground font-normal">(optional)</span>
-                      </label>
+                      <label className="block text-sm font-medium mb-1.5">Notes (optional)</label>
                       <textarea
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        placeholder="E.g., I've been feeling overwhelmed with exams..."
-                        className="w-full rounded-xl border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none h-20"
+                        placeholder="I've been feeling overwhelmed with exams..."
+                        className="w-full rounded-xl border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 outline-none resize-none h-20"
                       />
                     </div>
-                  </div>
-
-                  <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground bg-safe/5 rounded-lg p-3">
-                    <Shield className="h-4 w-4 text-safe shrink-0" />
-                    Your identity is fully protected. The volunteer only sees your display name.
                   </div>
 
                   <Button
                     variant="hero"
                     className="w-full mt-6 rounded-xl"
-<<<<<<< HEAD
-                    onClick={handleBooking}
-=======
                     onClick={handleBookingSafe}
->>>>>>> 6904773 (feat: SoulSync full codebase - volunteer dashboard, peer match, identity, email, mood tracker, admin panel)
                     disabled={loading}
                   >
                     {loading ? "Booking..." : "Confirm Booking"}
@@ -1236,7 +1035,6 @@ function PeerMatchPage() {
               </motion.div>
             )}
 
-            {/* Step 5: Booked Success */}
             {step === "booked" && (
               <motion.div key="booked" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
                 <Card className="p-8 text-center">
@@ -1245,39 +1043,9 @@ function PeerMatchPage() {
                   </div>
                   <h2 className="font-display text-xl font-semibold">Session Booked! 🎉</h2>
                   <p className="mt-2 text-muted-foreground max-w-sm mx-auto">
-                    Your anonymous support session with <strong>{selectedVolunteer?.name}</strong> has been confirmed.
+                    Your session with <strong>{selectedVolunteer?.name}</strong> has been confirmed.
                   </p>
-                  <div className="mt-4 rounded-xl bg-muted/50 p-4 text-sm max-w-xs mx-auto space-y-1">
-                    <p>
-                      📅 {selectedSlot && format(new Date(selectedSlot.slot_date + "T00:00:00"), "MMMM d, yyyy")}
-                    </p>
-                    <p>
-                      🕐 {selectedSlot?.start_time.slice(0, 5)} – {selectedSlot?.end_time.slice(0, 5)}
-                    </p>
-                  </div>
                   
-                  {/* Call Preference */}
-                  <div className="mt-6 p-4 border rounded-2xl bg-slate-50">
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Call Preference</p>
-                    <div className="flex gap-2">
-                       <button 
-                        onClick={() => setCallType("voice")}
-                        className={`flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all ${callType === 'voice' ? 'bg-primary border-primary text-white' : 'bg-white border-slate-100 text-slate-600'}`}
-                       >
-                         Audio Only
-                       </button>
-                       <button 
-                        onClick={() => setCallType("video")}
-                        className={`flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all ${callType === 'video' ? 'bg-primary border-primary text-white' : 'bg-white border-slate-100 text-slate-600'}`}
-                       >
-                         Video Call
-                       </button>
-                    </div>
-                  </div>
-
-                  <p className="mt-4 text-xs text-muted-foreground">
-                    Your room is ready. Everything is private and anonymous.
-                  </p>
                   <div className="mt-6 flex flex-col gap-3 justify-center">
                     {!hasJoined ? (
                       <Button 
@@ -1286,24 +1054,19 @@ function PeerMatchPage() {
                         onClick={() => {
                           setHasJoined(true);
                           const roomIdToJoin = myBooking?.id && myBooking.id !== "pending" ? myBooking.id : meetingToken;
-                          window.open(`https://meet.jit.si/SoulSync-Session-${roomIdToJoin}#config.startWithVideoMuted=${callType === 'voice'}&config.startWithAudioMuted=false`, '_blank');
+                          window.open(`https://meet.jit.si/SoulSync-Session-${roomIdToJoin}`, '_blank');
                         }}
                       >
                         <Phone className="h-5 w-5 mr-2" /> Start Anonymous Call
                       </Button>
                     ) : (
-                      <div className="space-y-3">
-                        <Button 
-                          variant="hero" 
-                          className="w-full rounded-xl bg-orange-500 hover:bg-orange-600 h-14 text-lg" 
-                          onClick={() => setStep("feedback")}
-                        >
-                          <CheckCircle className="h-5 w-5 mr-2" /> I've Finished my Session
-                        </Button>
-                        <p className="text-[10px] text-muted-foreground italic">
-                          Session in progress in a separate tab. Click above when done.
-                        </p>
-                      </div>
+                      <Button 
+                        variant="hero" 
+                        className="w-full rounded-xl bg-orange-500 hover:bg-orange-600 h-14 text-lg" 
+                        onClick={() => setStep("feedback")}
+                      >
+                        <CheckCircle className="h-5 w-5 mr-2" /> I've Finished my Session
+                      </Button>
                     )}
                     <Button variant="outline" className="rounded-xl" onClick={resetFlow}>
                       Book Another
@@ -1313,7 +1076,6 @@ function PeerMatchPage() {
               </motion.div>
             )}
 
-            {/* Step 6: Feedback */}
             {step === "feedback" && (
               <motion.div key="feedback" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
                 <Card className="p-8 text-center bg-white shadow-xl rounded-[2.5rem]">
@@ -1321,32 +1083,18 @@ function PeerMatchPage() {
                     <Heart className="h-8 w-8 text-primary" />
                   </div>
                   <h2 className="text-2xl font-display font-bold mb-2">How do you feel now?</h2>
-                  <p className="text-sm text-slate-500 mb-8">Your feedback helps us measure the impact of our peer supporters.</p>
-                  
                   <div className="flex justify-center gap-3 mb-8">
                     {[1, 2, 3, 4, 5].map((num) => (
                       <button
                         key={num}
                         onClick={() => setMoodRating(num)}
                         className={`h-12 w-12 rounded-xl border-2 transition-all font-bold flex items-center justify-center ${
-                          moodRating === num 
-                            ? "border-primary bg-primary text-white shadow-lg scale-110" 
-                            : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
+                          moodRating === num ? "border-primary bg-primary text-white" : "border-slate-100 bg-slate-50"
                         }`}
                       >
                         {num === 1 ? "😞" : num === 2 ? "😕" : num === 3 ? "😐" : num === 4 ? "🙂" : "😊"}
                       </button>
                     ))}
-                  </div>
-
-                  <div className="text-left mb-6">
-                    <label className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Additional Notes</label>
-                    <textarea 
-                      value={feedbackNotes}
-                      onChange={(e) => setFeedbackNotes(e.target.value)}
-                      placeholder="Optional: How was your experience?"
-                      className="w-full mt-2 rounded-2xl border-2 border-slate-100 p-4 text-sm focus:border-primary/50 outline-none resize-none h-24"
-                    />
                   </div>
 
                   <Button 
@@ -1361,24 +1109,6 @@ function PeerMatchPage() {
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* How it works */}
-          <div className="mt-16 grid grid-cols-1 sm:grid-cols-4 gap-6">
-            {[
-              { icon: Shield, title: "Anonymous", desc: "Your identity stays protected throughout" },
-              { icon: Users, title: "Peer Supporters", desc: "Connect with active volunteers who are available to help" },
-              { icon: Clock, title: "30-Min Sessions", desc: "Focused, structured support conversations" },
-              { icon: Heart, title: "You're Not Alone", desc: "1000s of students have found support here" },
-            ].map((item) => (
-              <div key={item.title} className="text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 mx-auto mb-3">
-                  <item.icon className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-display text-sm font-semibold">{item.title}</h3>
-                <p className="mt-1 text-xs text-muted-foreground">{item.desc}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </main>
       <Footer />
