@@ -14,9 +14,14 @@ dist-ssr
 .vinxi
 .tanstack/**
 .nitro
-# .env files are allowed for this push
-!.env
-!.env.*
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.sample
 
 # Wrangler / Cloudflare
 .wrangler/

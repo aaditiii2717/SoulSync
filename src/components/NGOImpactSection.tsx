@@ -1,18 +1,15 @@
 import { motion } from "framer-motion";
 
+import { INDIAN_NGO_PARTNERS } from "@/constants/partners";
+
 export function NGOImpactSection() {
-  const partners = [
-    { name: "The Banyan", logo: "https://thebanyan.org/images/logo.png" },
-    { name: "Sangath", logo: "https://www.sangath.in/wp-content/uploads/2021/01/logo.png" },
-    { name: "Snehi", logo: "http://www.snehi.org/images/logo.png" },
-    { name: "NIMHANS", logo: "https://nimhans.ac.in/wp-content/themes/nimhans/images/logo.png" },
-  ];
+  const partners = INDIAN_NGO_PARTNERS;
 
   const stats = [
-    { label: "Students Supported", value: "1,200+" },
-    { label: "Active Peer Supporters", value: "150+" },
-    { label: "NGO Partners", value: "8" },
-    { label: "SDG Goal Progress", value: "3 & 17" },
+    { label: "Students Supported", value: "500+" },
+    { label: "Active Peer Supporters", value: "40+" },
+    { label: "NGO Partners", value: "4" },
+    { label: "SDG Impact Goals", value: "3 & 17" },
   ];
 
   return (

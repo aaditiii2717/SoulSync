@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useAnonymousIdentity } from "@/hooks/useAnonymousIdentity";
 import { sendChatMessage, updateChatMemory, generateVolunteerBriefing, updatePostSessionMemory } from "@/utils/chat.functions";
 import { sendEmail } from "@/lib/email";
+import { CrisisMap } from "@/components/CrisisMap";
 
 export const Route = createFileRoute("/peer-match")({
   component: PeerMatchPage,
@@ -620,6 +621,30 @@ function PeerMatchPage() {
     }, 2000);
   };
 
+  const getGoogleCalendarUrl = () => {
+    if (!selectedSlot || !selectedVolunteer) return "";
+
+    const dateStr = selectedSlot.slot_date.replace(/-/g, "");
+    const startTimeStr = selectedSlot.start_time.replace(/:/g, "");
+    const endTimeStr = selectedSlot.end_time.replace(/:/g, "");
+
+    const start = `${dateStr}T${startTimeStr}`;
+    const end = `${dateStr}T${endTimeStr}`;
+    
+    const roomId = myBooking?.id && myBooking.id !== "pending" ? myBooking.id : meetingToken;
+    const meetUrl = `https://meet.jit.si/SoulSync-Session-${roomId}`;
+
+    const params = new URLSearchParams({
+      action: "TEMPLATE",
+      text: "SoulSync Peer Support Session 🌿",
+      dates: `${start}/${end}`,
+      details: `Your anonymous peer support session with ${selectedVolunteer.name}.\n\nJoin Link: ${meetUrl}\n\nSession ID: ${roomId}`,
+      location: meetUrl,
+    });
+
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
+  };
+
   const resetFlow = () => {
     setStep("issue");
     setSelectedIssue("");
@@ -738,10 +763,19 @@ function PeerMatchPage() {
                       <Phone className="h-8 w-8 text-alert" />
                     </div>
                     <h2 className="font-display text-xl font-bold">Crisis Helplines</h2>
-                    <p className="mt-2 text-sm text-muted-foreground">
+                    <p className="mt-2 text-sm text-muted-foreground mb-6">
                       You are not alone. Reach out now — trained professionals are available 24/7.
                     </p>
-                    <div className="mt-6 space-y-3">
+
+                    <div className="mb-8">
+                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-3 flex items-center gap-2">
+                        <Navigation className="h-3.5 w-3.5" />
+                        Nearby Safety Support
+                      </p>
+                      <CrisisMap />
+                    </div>
+
+                    <div className="space-y-3">
                       {[
                         { name: "iCall (India)", number: "9152987821" },
                         { name: "Vandrevala Foundation", number: "1860-2662-345" },
@@ -1068,8 +1102,15 @@ function PeerMatchPage() {
                         <CheckCircle className="h-5 w-5 mr-2" /> I've Finished my Session
                       </Button>
                     )}
-                    <Button variant="outline" className="rounded-xl" onClick={resetFlow}>
-                      Book Another
+                    <Button 
+                      variant="outline" 
+                      className="rounded-xl border-primary/30 text-primary hover:bg-primary/5" 
+                      onClick={() => window.open(getGoogleCalendarUrl(), '_blank')}
+                    >
+                      <Calendar className="h-4 w-4 mr-2" /> Add to Google Calendar
+                    </Button>
+                    <Button variant="ghost" className="rounded-xl text-slate-400 hover:text-slate-600" onClick={resetFlow}>
+                      Return to Start
                     </Button>
                   </div>
                 </Card>

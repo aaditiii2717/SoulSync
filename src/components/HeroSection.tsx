@@ -33,7 +33,7 @@ export function HeroSection() {
           </h1>
 
           <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground sm:text-xl">
-            SoulSync is the softer first step. No login, no campus link, no judgment. Join 1,200+ peers rebuilding resilience through emotionally aware AI and verified peer support.
+            SoulSync is the softer first step. No login, no campus link, no judgment. Join 30+ students rebuilding resilience through emotionally aware AI and verified peer support.
           </p>
 
           <div className="mt-10 flex flex-col items-start gap-4 sm:flex-row">
@@ -75,7 +75,7 @@ export function HeroSection() {
               <span className="relative inline-flex rounded-full h-3 w-3 bg-safe"></span>
             </div>
             <p className="text-sm font-bold text-slate-500">
-              <span className="text-foreground">42 students</span> are chatting right now. You aren't alone.
+              <span className="text-foreground">3 students</span> are chatting right now. You aren't alone.
             </p>
           </motion.div>
         </motion.div>

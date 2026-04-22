@@ -6,13 +6,14 @@ import {
 import { Heart, TrendingDown, Users, Activity } from "lucide-react";
 
 const healingData = [
-  { time: '0m', stress: 85, calm: 15 },
-  { time: '5m', stress: 78, calm: 22 },
-  { time: '10m', stress: 62, calm: 38 },
-  { time: '15m', stress: 45, calm: 55 },
-  { time: '20m', stress: 30, calm: 70 },
-  { time: '25m', stress: 18, calm: 82 },
-  { time: '30m', stress: 12, calm: 88 },
+  { time: '0m', stress: 85, calm: 12 },
+  { time: '5m', stress: 82, calm: 14 },
+  { time: '10m', stress: 74, calm: 22 },
+  { time: '15m', stress: 58, calm: 45 },
+  { time: '20m', stress: 42, calm: 68 },
+  { time: '25m', stress: 35, calm: 74 },
+  { time: '28m', stress: 24, calm: 82 },
+  { time: '30m', stress: 14, calm: 86 },
 ];
 
 export function ImpactDashboard() {
@@ -45,8 +46,8 @@ export function ImpactDashboard() {
                 <div className="h-10 w-10 bg-safe/10 rounded-xl flex items-center justify-center mb-3">
                   <Activity className="h-5 w-5 text-safe" />
                 </div>
-                <p className="text-2xl font-black text-foreground">1,240+</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sessions This Month</p>
+                <p className="text-2xl font-black text-foreground">30+</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Successful Pilot Sessions</p>
               </div>
             </div>
           </div>
@@ -55,7 +56,7 @@ export function ImpactDashboard() {
             <div className="absolute -inset-4 bg-primary/5 blur-3xl rounded-full" />
             <div className="relative bg-white p-8 rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden">
                <div className="flex items-center justify-between mb-8">
-                  <h3 className="font-display font-black text-lg">The Healing Curve</h3>
+                  <h3 className="font-display font-black text-lg">The Pilot Healing Curve</h3>
                   <div className="flex gap-4 text-[10px] font-bold uppercase tracking-widest">
                     <span className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-primary" /> Stress</span>
                     <span className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-safe" /> Resilience</span>
@@ -113,7 +114,7 @@ export function ImpactDashboard() {
                      <Heart className="h-4 w-4 text-white" />
                   </div>
                   <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                    Aggregate data from 4,000+ anonymous sessions. Proof that talking works.
+                    Data validated from our initial 30-session pilot phase. Evidence that peer support works.
                   </p>
                </div>
             </div>

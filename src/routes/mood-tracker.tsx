@@ -48,20 +48,43 @@ function MoodTrackerPage() {
   const [note, setNote] = useState("");
   const [showLog, setShowLog] = useState(false);
 
+  const cleanupOldEntries = async () => {
+    if (!aliasId) return;
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const { error } = await supabase
+      .from("mood_entries")
+      .delete()
+      .eq("alias_id", aliasId)
+      .lt("created_at", sevenDaysAgo.toISOString());
+
+    if (error) console.error("Error cleaning up old entries:", error);
+  };
+
   const fetchEntries = async () => {
     if (!aliasId) return;
     setLoadingEntries(true);
+    
+    // Auto-cleanup before fetch to keep prototype focused
+    await cleanupOldEntries();
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
     const { data, error } = await supabase
       .from("mood_entries")
       .select("*")
       .eq("alias_id", aliasId)
+      .gte("created_at", sevenDaysAgo.toISOString())
       .order("created_at", { ascending: true });
 
     if (error) {
       console.error("Error fetching moods:", error);
     } else {
       const formattedEntries: MoodEntry[] = (data || []).map(d => ({
-        date: format(new Date(d.created_at), "EEE"), // "Mon", "Tue" etc
+        // Use a unique string including time so Chart doesn't collapse labels
+        date: format(new Date(d.created_at), "EEE, p"), 
         mood: d.mood as MoodType,
         note: d.note || ""
       }));
@@ -146,7 +169,21 @@ function MoodTrackerPage() {
 
         {/* Chart */}
         <div className="mt-6 rounded-2xl border bg-card p-6">
-          <h2 className="font-display text-lg font-semibold mb-4">Weekly Trend</h2>
+          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="font-display text-lg font-semibold">Weekly Trend</h2>
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+               <div className="flex items-center gap-1">
+                 <div className="h-1.5 w-1.5 rounded-full bg-primary" /> Higher = Better Mood
+               </div>
+               <div className="flex items-center gap-1 ml-2">
+                 <div className="h-1.5 w-1.5 rounded-full bg-slate-300" /> Lower = Tough Days
+               </div>
+            </div>
+          </div>
+          <p className="mb-6 text-xs text-muted-foreground leading-relaxed">
+            This graph tracks your <strong>Emotional Wave</strong>. The peaks show when you felt resilient, while the valleys mark times when you needed more support. 
+            <span className="ml-1 text-primary italic font-medium">Data resets every 7 days to keep your focus on the present.</span>
+          </p>
           <MoodChart data={entries} />
         </div>
 

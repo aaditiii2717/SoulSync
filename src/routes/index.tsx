@@ -11,6 +11,7 @@ import { HeroSection } from "@/components/HeroSection";
 import { ImpactDashboard } from "@/components/ImpactDashboard";
 import { Navbar } from "@/components/Navbar";
 import { WorkflowSection } from "@/components/WorkflowSection";
+import { EngagementHub } from "@/components/EngagementHub";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -24,6 +25,7 @@ function LandingPage() {
         <Navbar />
         <HeroSection />
         <div className="relative z-20 bg-background/60 backdrop-blur-sm">
+          <EngagementHub />
           <FeaturesSection />
           <NGOImpactSection />
           <WorkflowSection />

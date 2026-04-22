@@ -37,6 +37,7 @@ export function MoodChart({ data = demoData }: { data?: MoodEntry[] }) {
   const chartData = data.map((d) => ({
     date: d.date,
     value: moodValues[d.mood],
+    moodLabel: d.mood,
   }));
 
   return (
@@ -49,31 +50,46 @@ export function MoodChart({ data = demoData }: { data?: MoodEntry[] }) {
               <stop offset="95%" stopColor="oklch(0.55 0.08 145)" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <XAxis dataKey="date" axisLine={false} tickLine={false} className="text-xs" />
+          <XAxis 
+            dataKey="date" 
+            axisLine={false} 
+            tickLine={false} 
+            className="text-[10px] font-bold text-slate-400"
+            interval="preserveStartEnd"
+          />
           <YAxis
             domain={[1, 5]}
             ticks={[1, 2, 3, 4, 5]}
-            tickFormatter={(v: number) => moodLabels[v] || ""}
+            tickFormatter={(v: number) => moodLabels[v]?.split(" ")[0] || ""}
             axisLine={false}
             tickLine={false}
-            width={100}
-            className="text-xs"
+            width={40}
+            className="text-lg"
           />
           <Tooltip
-            formatter={(value: number) => [moodLabels[value], "Mood"]}
-            contentStyle={{
-              borderRadius: "12px",
-              border: "1px solid oklch(0.91 0.02 145)",
-              background: "white",
-              fontSize: "13px",
+            content={({ active, payload }) => {
+              if (active && payload && payload.length) {
+                const data = payload[0].payload;
+                return (
+                  <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-xl">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{data.date}</div>
+                    <div className="flex items-center gap-2">
+                       <span className="text-xl">{moodLabels[data.value]?.split(" ")[0]}</span>
+                       <span className="font-bold text-slate-800 capitalize">{data.moodLabel}</span>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
             }}
           />
           <Area
             type="monotone"
             dataKey="value"
             stroke="oklch(0.55 0.08 145)"
-            strokeWidth={3}
+            strokeWidth={4}
             fill="url(#moodGradient)"
+            animationDuration={1500}
           />
         </AreaChart>
       </ResponsiveContainer>

@@ -1,95 +1,143 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { HelpCircle, Heart, MessageCircle, ChevronDown } from "lucide-react";
-import { motion } from "framer-motion";
-import { useState } from "react";
+import { HelpCircle, Heart, MessageCircle, ChevronDown, Plus, Sparkles, Loader2, Send, Info } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAnonymousIdentity } from "@/hooks/useAnonymousIdentity";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/community-qna")({
   component: CommunityQnAPage,
 });
 
+interface QnAResponse {
+  id: string;
+  response_text: string;
+  created_at: string;
+}
+
 interface QnAItem {
   id: string;
   question: string;
-  answer: string;
+  answer: string | null;
   category: string;
-  hearts: number;
-  responses: number;
+  relate_count: number;
+  responses_count: number;
+  responses?: QnAResponse[];
 }
 
-const qnaItems: QnAItem[] = [
-  {
-    id: "1",
-    question: "Does anyone else feel like they're the only one struggling while everyone seems fine?",
-    answer: "You're absolutely not alone in this. Studies show that over 60% of college students report experiencing overwhelming anxiety. Social media creates an illusion that everyone else has it together — they don't. What you're feeling is incredibly common, and reaching out like this takes real courage. 💛",
-    category: "Loneliness",
-    hearts: 234,
-    responses: 47,
-  },
-  {
-    id: "2",
-    question: "I can't sleep because of exam anxiety. Is this normal?",
-    answer: "Very normal — exam anxiety affects nearly 40% of students. Your brain goes into 'threat mode' making it hard to wind down. Try the 4-7-8 breathing technique: breathe in for 4 seconds, hold for 7, exhale for 8. Also, avoid screens 30 minutes before bed. If it persists for weeks, consider talking to a counselor. You've got this! 🌙",
-    category: "Anxiety",
-    hearts: 189,
-    responses: 36,
-  },
-  {
-    id: "3",
-    question: "I feel burnt out and have zero motivation. How do I get back on track?",
-    answer: "Burnout is your mind's way of saying 'I need a reset.' Start small — don't try to fix everything at once. Give yourself permission to rest without guilt. Try the '2-minute rule': if something takes less than 2 minutes, do it now. Small wins build momentum. And remember: rest is productive. Your worth isn't measured by your output. 🌿",
-    category: "Burnout",
-    hearts: 312,
-    responses: 58,
-  },
-  {
-    id: "4",
-    question: "Is it okay to feel sad for no reason?",
-    answer: "Absolutely. Emotions don't always need a 'reason.' Sometimes our bodies are processing stress, hormonal changes, or accumulated fatigue. It's perfectly valid to feel sad without a specific cause. Acknowledge it, sit with it, and be gentle with yourself. If it lasts more than two weeks and affects daily life, reaching out to a professional can help. You matter. 💙",
-    category: "Emotions",
-    hearts: 456,
-    responses: 89,
-  },
-  {
-    id: "5",
-    question: "How do I tell my parents I need therapy without them freaking out?",
-    answer: "This is a really brave question. Try framing it around growth rather than crisis: 'I've been learning about mental wellness and I think talking to someone could help me handle stress better.' You can compare it to going to a doctor for a check-up — preventive, not emergency. If your parents are resistant, many colleges offer free counseling services you can access independently. 🌟",
-    category: "Getting Help",
-    hearts: 278,
-    responses: 52,
-  },
-  {
-    id: "6",
-    question: "I lost my friend group and now I feel completely isolated. What do I do?",
-    answer: "Losing a friend group is genuinely painful — it's a form of grief. Give yourself time to process it. Then, start small: join one club or study group that interests you. Quality matters more than quantity — one genuine connection is worth more than a large group where you feel invisible. You're worthy of real friendship, and the right people will see that. 🤝",
-    category: "Loneliness",
-    hearts: 201,
-    responses: 41,
-  },
-  {
-    id: "7",
-    question: "Why do I feel anxious even when nothing bad is happening?",
-    answer: "Your nervous system can stay in 'alert mode' from past stress — it's called hypervigilance. Your brain learned to watch for danger and hasn't fully turned off that alarm. Grounding exercises help: name 5 things you see, 4 you hear, 3 you touch, 2 you smell, 1 you taste. This tells your brain 'I'm safe right now.' Over time, it gets better. 🧠",
-    category: "Anxiety",
-    hearts: 345,
-    responses: 67,
-  },
-  {
-    id: "8",
-    question: "I compare myself to everyone and it's destroying me. How do I stop?",
-    answer: "Comparison is a natural human tendency, but social media amplifies it 100x. Try this: for every comparison thought, name one thing you've overcome or achieved this year. Unfollow accounts that trigger you. Remember — you're comparing your behind-the-scenes to everyone else's highlight reel. Your journey is uniquely yours, and that's its strength. ✨",
-    category: "Self-Worth",
-    hearts: 389,
-    responses: 73,
-  },
-];
-
-const categories = ["All", ...Array.from(new Set(qnaItems.map((q) => q.category)))];
+const DEFAULT_CATEGORIES = ["All", "Loneliness", "Anxiety", "Burnout", "Emotions", "Getting Help", "Self-Worth"];
 
 function CommunityQnAPage() {
+  const { aliasId } = useAnonymousIdentity();
+  const [qnaItems, setQnaItems] = useState<QnAItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Submit state
+  const [newQuestion, setNewQuestion] = useState("");
+  const [newCategory, setNewCategory] = useState("General");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Response state
+  const [activeResponse, setActiveResponse] = useState("");
+  const [isPostingResponse, setIsPostingResponse] = useState(false);
+
+  const fetchQuestions = async () => {
+    setIsLoading(true);
+    const { data, error } = await supabase
+      .from("community_questions")
+      .select(`
+        *,
+        qna_responses (*)
+      `)
+      .eq("is_public", true)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching Q&A:", error);
+    } else {
+      setQnaItems(data?.map(q => ({
+        ...q,
+        responses: q.qna_responses || []
+      })) as QnAItem[] || []);
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    fetchQuestions();
+
+    // Set up real-time
+    const channel = supabase
+      .channel('community-qna-updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'community_questions' }, () => fetchQuestions())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'qna_responses' }, () => fetchQuestions())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  const handleAsk = async () => {
+    if (!newQuestion.trim() || !aliasId) return;
+    setIsSubmitting(true);
+    const { error } = await supabase
+      .from("community_questions")
+      .insert({
+        question: newQuestion.trim(),
+        category: newCategory,
+        alias_id: aliasId,
+      });
+
+    if (error) {
+      toast.error("Failed to submit question.");
+    } else {
+      toast.success("Question submitted anonymously!");
+      setNewQuestion("");
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleRelate = async (id: string, currentCount: number) => {
+    setQnaItems(prev => prev.map(item => item.id === id ? { ...item, relate_count: currentCount + 1 } : item));
+    const { error } = await supabase
+      .from("community_questions")
+      .update({ relate_count: currentCount + 1 })
+      .eq("id", id);
+    if (error) toast.error("Couldn't update connection count.");
+  };
+
+  const handlePostResponse = async (questionId: string) => {
+    if (!activeResponse.trim() || !aliasId) return;
+    setIsPostingResponse(true);
+    const { error } = await supabase
+      .from("qna_responses")
+      .insert({
+        question_id: questionId,
+        response_text: activeResponse.trim(),
+        alias_id: aliasId
+      });
+
+    if (error) {
+      toast.error("Failed to post response.");
+    } else {
+      toast.success("Supportive word posted!");
+      setActiveResponse("");
+      // Update local count
+      setQnaItems(prev => prev.map(item => 
+        item.id === questionId ? { ...item, responses_count: (item.responses_count || 0) + 1 } : item
+      ));
+      
+      // Update community_questions responses_count via RPC or direct update
+      await supabase.rpc('increment_response_count', { row_id: questionId });
+    }
+    setIsPostingResponse(false);
+  };
 
   const filtered = selectedCategory === "All" ? qnaItems : qnaItems.filter((q) => q.category === selectedCategory);
 
@@ -100,26 +148,86 @@ function CommunityQnAPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-4">
             <HelpCircle className="h-4 w-4" />
-            You&apos;re Not Alone
+            Collective Resillience
           </div>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold">
-            Questions Others <span className="text-gradient">Have Asked</span>
+          <h1 className="font-display text-4xl sm:text-5xl font-black tracking-tight">
+            Common <span className="text-gradient">Humanity</span>
           </h1>
-          <p className="mt-3 text-muted-foreground max-w-lg mx-auto">
-            Real questions from real students. Reading these might help you realize that what you&apos;re going through is more common than you think.
+          <p className="mt-4 text-slate-500 max-w-lg mx-auto font-medium">
+             Reading these peer stories helps you realize that your internal struggles are a shared part of the student experience.
           </p>
         </motion.div>
 
+        {/* RE-DESIGNED Professional Ask Form */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative mb-16 group"
+        >
+          <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-calm/20 to-primary/20 rounded-[3rem] blur-xl opacity-50 group-hover:opacity-100 transition-opacity" />
+          <div className="relative rounded-[2.8rem] bg-white/70 backdrop-blur-xl border border-white/50 p-10 shadow-2xl overflow-hidden ring-1 ring-slate-100/50">
+             <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                <Sparkles className="h-24 w-24 text-primary" />
+             </div>
+             
+             <div className="flex items-center gap-4 mb-8">
+                <div className="h-12 w-12 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/25">
+                   <Plus className="h-6 w-6" />
+                </div>
+                <div>
+                   <h3 className="font-display font-black text-xl text-slate-800">Ask Anonymously</h3>
+                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Share your thought, find your peers</p>
+                </div>
+             </div>
+
+             <div className="space-y-6">
+                <div className="relative">
+                   <textarea 
+                     value={newQuestion}
+                     onChange={(e) => setNewQuestion(e.target.value)}
+                     placeholder="What's been on your mind? (e.g., 'Is it normal to feel like a fraud even when I succeed?')"
+                     className="w-full rounded-[2rem] border-2 border-slate-50 bg-white/80 p-6 text-sm font-medium placeholder:text-slate-300 focus:outline-none focus:border-primary/30 min-h-[140px] resize-none transition-all shadow-inner"
+                   />
+                   <div className="absolute bottom-4 right-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      <Info className="h-3 w-3" /> Anonymous by default
+                   </div>
+                </div>
+                
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                   <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                      {["Loneliness", "Anxiety", "Burnout", "Self-Worth"].map(cat => (
+                         <button 
+                            key={cat}
+                            onClick={() => setNewCategory(cat)}
+                            className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${newCategory === cat ? 'bg-slate-800 text-white shadow-xl scale-105' : 'bg-slate-100/50 text-slate-500 hover:bg-white hover:shadow-sm'}`}
+                         >
+                            {cat}
+                         </button>
+                      ))}
+                   </div>
+                   <Button 
+                      onClick={handleAsk}
+                      disabled={isSubmitting || !newQuestion.trim()}
+                      className="h-14 rounded-full px-12 font-black gap-3 text-lg transition-all hover:scale-105 active:scale-95 shadow-xl shadow-primary/20"
+                   >
+                      {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+                      Launch Question
+                   </Button>
+                </div>
+             </div>
+          </div>
+        </motion.div>
+
         {/* Category filters */}
-        <div className="flex flex-wrap gap-2 justify-center mb-8">
-          {categories.map((cat) => (
+        <div className="flex flex-wrap gap-2 justify-center mb-10">
+          {DEFAULT_CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              className={`rounded-full px-5 py-2 text-sm font-bold transition-all ${
                 selectedCategory === cat
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-accent"
+                  ? "bg-slate-900 text-white shadow-xl scale-105"
+                  : "bg-white text-slate-500 hover:bg-slate-50 border border-slate-100"
               }`}
             >
               {cat}
@@ -127,73 +235,135 @@ function CommunityQnAPage() {
           ))}
         </div>
 
-        {/* Q&A cards */}
-        <div className="space-y-4">
-          {filtered.map((item, i) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="rounded-xl border bg-card overflow-hidden"
-            >
-              <button
-                onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
-                className="w-full text-left p-5 flex items-start gap-3"
+        {/* Q&A Cards */}
+        <div className="space-y-6 min-h-[400px]">
+          {isLoading ? (
+             <div className="flex flex-col items-center justify-center py-24 gap-4 opacity-30">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-800">Tuning Community Frequencies...</p>
+             </div>
+          ) : filtered.length === 0 ? (
+             <div className="text-center py-24 bg-slate-50 rounded-[3.5rem] border-2 border-dashed border-slate-200">
+                <HelpCircle className="mx-auto h-16 w-16 text-slate-200 mb-6" />
+                <p className="text-lg font-bold text-slate-400 italic">Be the first voice in this shared space.</p>
+             </div>
+          ) : (
+            filtered.map((item, i) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-[3rem] border border-slate-100 bg-white/50 backdrop-blur-sm overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 group"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 mt-0.5">
-                  <HelpCircle className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium leading-relaxed">{item.question}</p>
-                  <div className="flex items-center gap-4 mt-2">
-                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                      <Heart className="h-3 w-3" /> {item.hearts} relate
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                      <MessageCircle className="h-3 w-3" /> {item.responses} responses
-                    </span>
-                    <span className="text-xs rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
-                      {item.category}
-                    </span>
+                <div className="p-8">
+                  <div className="flex items-start gap-5">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/5 text-primary group-hover:bg-primary group-hover:text-white transition-all duration-500">
+                      <HelpCircle className="h-6 w-6" />
+                    </div>
+                    <div className="flex-1">
+                      <button 
+                        onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                        className="text-left w-full group/title"
+                      >
+                        <p className="text-lg font-bold leading-[1.6] text-slate-800 transition-colors group-hover/title:text-primary">{item.question}</p>
+                      </button>
+                      
+                      <div className="flex flex-wrap items-center gap-4 mt-6">
+                        <button 
+                          onClick={() => handleRelate(item.id, item.relate_count)}
+                          className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-100/50 px-4 py-2 rounded-full hover:bg-primary/10 hover:text-primary transition-all"
+                        >
+                          <Heart className={`h-4 w-4 ${item.relate_count > 0 ? "fill-primary text-primary" : ""}`} /> 
+                          <span>{item.relate_count}</span>
+                          <span className="text-slate-400 font-medium">relate</span>
+                        </button>
+                        
+                        <div className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-100/50 px-4 py-2 rounded-full">
+                          <MessageCircle className="h-4 w-4" /> 
+                          <span>{item.responses_count || (item.responses?.length || 0)}</span>
+                          <span className="text-slate-400 font-medium">responses</span>
+                        </div>
+                        
+                        <span className="text-[10px] font-black uppercase tracking-widest bg-slate-100 px-4 py-2 rounded-full text-slate-400 ml-auto">
+                          {item.category}
+                        </span>
+                      </div>
+                    </div>
+                    <button onClick={() => setExpandedId(expandedId === item.id ? null : item.id)} className="mt-1">
+                      <ChevronDown className={`h-6 w-6 text-slate-300 transition-transform duration-500 ${expandedId === item.id ? "rotate-180" : ""}`} />
+                    </button>
                   </div>
-                </div>
-                <ChevronDown
-                  className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${
-                    expandedId === item.id ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
 
-              {expandedId === item.id && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  className="px-5 pb-5 border-t"
-                >
-                  <div className="pt-4 pl-11">
-                    <p className="text-sm text-muted-foreground leading-relaxed">{item.answer}</p>
-                  </div>
-                </motion.div>
-              )}
-            </motion.div>
-          ))}
+                  <AnimatePresence>
+                    {expandedId === item.id && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-8 pt-8 border-t border-slate-50"
+                      >
+                        {/* SoulSync Guidance */}
+                        <div className="mb-8 rounded-[2rem] bg-primary/5 p-6 border-l-4 border-primary">
+                          <div className="flex items-center gap-2 mb-3">
+                             <Sparkles className="h-4 w-4 text-primary" />
+                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">SoulSync Guidance</span>
+                          </div>
+                          <p className="text-sm text-slate-600 leading-relaxed italic">
+                             {item.answer || "This question is awaiting a peer or community response. You aren't alone in feeling this way."}
+                          </p>
+                        </div>
+
+                        {/* Peer Responses Feed */}
+                        <div className="space-y-4 pl-4 border-l-2 border-slate-100">
+                           <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Peer Voice</h4>
+                           {item.responses && item.responses.length > 0 ? (
+                              item.responses.map(resp => (
+                                 <motion.div 
+                                   key={resp.id} 
+                                   initial={{ opacity: 0, x: -10 }}
+                                   animate={{ opacity: 1, x: 0 }}
+                                   className="rounded-2xl bg-slate-50 p-4 text-xs text-slate-600 leading-relaxed"
+                                 >
+                                    {resp.response_text}
+                                    <div className="mt-2 text-[9px] font-bold text-slate-300 uppercase tracking-widest">
+                                       {formatDistanceToNow(new Date(resp.created_at))} ago
+                                    </div>
+                                 </motion.div>
+                              ))
+                           ) : (
+                              <p className="text-[10px] text-slate-400 italic">No peer responses yet. Be the first to reach out.</p>
+                           )}
+
+                           {/* Add Response Input */}
+                           <div className="mt-6 pt-4 border-t border-slate-50">
+                              <div className="flex items-center gap-3">
+                                 <input 
+                                   type="text"
+                                   value={activeResponse}
+                                   onChange={(e) => setActiveResponse(e.target.value)}
+                                   placeholder="Add a word of support..."
+                                   className="flex-1 rounded-xl border border-slate-100 bg-white px-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                 />
+                                 <Button 
+                                   variant="ghost" 
+                                   size="icon" 
+                                   onClick={() => handlePostResponse(item.id)}
+                                   disabled={!activeResponse.trim() || isPostingResponse}
+                                   className="h-9 w-9 rounded-xl text-primary hover:bg-primary/5"
+                                 >
+                                    {isPostingResponse ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                 </Button>
+                              </div>
+                           </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            ))
+          )}
         </div>
-
-        {/* Encouragement */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mt-12 rounded-2xl gradient-calm p-8 text-center"
-        >
-          <p className="font-display text-lg font-semibold text-foreground">
-            Remember: asking for help is a sign of strength, not weakness. 💪
-          </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Thousands of students feel exactly the way you do. You are never truly alone.
-          </p>
-        </motion.div>
       </div>
       <Footer />
     </div>

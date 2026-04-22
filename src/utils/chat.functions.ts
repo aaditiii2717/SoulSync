@@ -238,3 +238,48 @@ Current Memory will be updated with this. Keep it concise but insightful.`;
 
     return { success: true };
   });
+
+export const generateSessionReport = createServerFn({ method: "POST" })
+  .inputValidator(
+    (input: {
+      handoff: string | null;
+      studentNote: string | null;
+      issueType: string;
+      volunteerDraft: string;
+    }) => input
+  )
+  .handler(async ({ data }) => {
+    const geminiApiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
+    if (!geminiApiKey) return { report: "AI Reporting unavailable." };
+
+    const prompt = `You are an AI Clinical Assistant helping a Peer Supporter volunteer finalize their session notes.
+Synthesize the following context into a professional, concise, and structured session report (2-3 paragraphs).
+
+Context:
+- Issue Category: ${data.issueType}
+- Pre-Session Briefing: ${data.handoff || "No briefing available."}
+- Student's Initial Note: ${data.studentNote || "No student note provided."}
+- Volunteer's Session Observations: ${data.volunteerDraft || "No draft notes provided."}
+
+The report should include:
+1. **Summary of Interaction**: What themes were discussed?
+2. **Techniques & Support**: What grounding or support was provided?
+3. **Follow-up Recommendations**: What should the next volunteer or the student focus on?
+
+Structure it professionally but keep it human-centric for the SoulSync platform.`;
+
+    const response = await fetch(
+      `${DEFAULT_GEMINI_API_BASE_URL}/models/${DEFAULT_GEMINI_MODEL}:generateContent`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": geminiApiKey },
+        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }] }),
+      }
+    );
+
+    if (!response.ok) return { report: "Error generating report." };
+    const result = await response.json();
+    const report = result.candidates?.[0]?.content?.parts?.[0]?.text || "No report generated.";
+
+    return { report };
+  });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wind, Play, Pause, RotateCcw } from "lucide-react";
+import { Wind, Play, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function BreathingVisualizer() {
