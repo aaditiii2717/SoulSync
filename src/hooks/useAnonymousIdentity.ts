@@ -8,6 +8,7 @@ import {
 
 export function useAnonymousIdentity() {
   const [aliasId, setAliasId] = useState<string | null>(null);
+  const [profileExists, setProfileExists] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -15,22 +16,36 @@ export function useAnonymousIdentity() {
       let id = localStorage.getItem(ALIAS_STORAGE_KEY);
 
       if (!id) {
-        // Generate new Identity
+        // Generate new identity
         const newId = crypto.randomUUID();
         const randomName = createAnonymousAliasName();
 
         const { error } = await supabase
           .from("student_profiles")
-          .insert({
-            alias_id: newId,
-            anonymous_username: randomName,
-          });
+          .upsert(
+            { alias_id: newId, anonymous_username: randomName },
+            { onConflict: "alias_id" }
+          );
 
-        if (!error) {
+        if (error) {
+          console.error("[useAnonymousIdentity] student_profiles upsert error:", error);
+          // DB row failed — store id locally but mark profile as NOT persisted.
           localStorage.setItem(ALIAS_STORAGE_KEY, newId);
           dispatchIdentityChanged();
           id = newId;
+          setAliasId(id);
+          setProfileExists(false);
+          setIsLoading(false);
+          return;
         }
+
+        localStorage.setItem(ALIAS_STORAGE_KEY, newId);
+        dispatchIdentityChanged();
+        id = newId;
+        setProfileExists(true);
+      } else {
+        // id came from localStorage — assume the profile exists in DB
+        setProfileExists(true);
       }
 
       setAliasId(id);
@@ -40,5 +55,5 @@ export function useAnonymousIdentity() {
     initIdentity();
   }, []);
 
-  return { aliasId, isLoading };
+  return { aliasId, profileExists, isLoading };
 }

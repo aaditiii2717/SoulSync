@@ -225,13 +225,21 @@ function PeerMatchPage() {
 
   // ── Guaranteed identity (creates a student_profile row + UUID on first visit,
   //    persists to DB, recoverable via username+key — never null after load) ──
+<<<<<<< HEAD
   const { aliasId, isLoading: identityLoading } = useAnonymousIdentity();
+=======
+  const { aliasId, profileExists, isLoading: identityLoading } = useAnonymousIdentity();
+>>>>>>> 6904773 (feat: SoulSync full codebase - volunteer dashboard, peer match, identity, email, mood tracker, admin panel)
 
   // ── persistent booking state (reads from DB, survives navigation) ──────────
   const [myBooking, setMyBooking] = useState<any>(null);
   const [bookingLoading, setBookingLoading] = useState(true);
 
+<<<<<<< HEAD
   const fetchMyBooking = async () => {
+=======
+  const fetchMyBooking = async (currentAliasId?: string | null) => {
+>>>>>>> 6904773 (feat: SoulSync full codebase - volunteer dashboard, peer match, identity, email, mood tracker, admin panel)
     setBookingLoading(true);
 
     const storedBookingId = localStorage.getItem("soulSync_last_booking_id");
@@ -243,6 +251,10 @@ function PeerMatchPage() {
 
     const SELECT_FIELDS = `
       id,
+<<<<<<< HEAD
+=======
+      student_alias_id,
+>>>>>>> 6904773 (feat: SoulSync full codebase - volunteer dashboard, peer match, identity, email, mood tracker, admin panel)
       meeting_token,
       anonymous_name,
       issue_type,
@@ -271,6 +283,26 @@ function PeerMatchPage() {
       return;
     }
 
+<<<<<<< HEAD
+=======
+    // Backfill student_alias_id if it was missing (e.g. booked before column was populated)
+    const effectiveAlias = currentAliasId ?? localStorage.getItem("soulSync_alias_id");
+    if (booking && !(booking as any).student_alias_id && effectiveAlias) {
+      console.log("[fetchMyBooking] Backfilling student_alias_id for booking", storedBookingId);
+      const { error: backfillError } = await supabase
+        .from("session_bookings")
+        .update({ student_alias_id: effectiveAlias })
+        .eq("id", storedBookingId);
+
+      if (backfillError) {
+        console.error("[fetchMyBooking] Backfill failed — check RLS UPDATE policy on session_bookings:", backfillError);
+      } else {
+        // Patch the in-memory booking so the card reflects the linked alias immediately
+        (booking as any).student_alias_id = effectiveAlias;
+      }
+    }
+
+>>>>>>> 6904773 (feat: SoulSync full codebase - volunteer dashboard, peer match, identity, email, mood tracker, admin panel)
     const now = new Date();
     const slot = booking?.time_slots;
     if (slot && parseISO(`${slot.slot_date}T${slot.end_time}`) > now) {
@@ -282,11 +314,26 @@ function PeerMatchPage() {
     setBookingLoading(false);
   };
 
+<<<<<<< HEAD
   // Run on mount
+=======
+  // Run on mount (without alias — just restores from localStorage)
+>>>>>>> 6904773 (feat: SoulSync full codebase - volunteer dashboard, peer match, identity, email, mood tracker, admin panel)
   useEffect(() => {
     fetchMyBooking();
   }, []);
 
+<<<<<<< HEAD
+=======
+  // Re-run with aliasId once identity resolves so we can backfill student_alias_id
+  // on existing bookings that were created without it
+  useEffect(() => {
+    if (aliasId) {
+      fetchMyBooking(aliasId);
+    }
+  }, [aliasId]);
+
+>>>>>>> 6904773 (feat: SoulSync full codebase - volunteer dashboard, peer match, identity, email, mood tracker, admin panel)
   useEffect(() => {
     const fetchHistory = async () => {
       if (!aliasId) return;
@@ -546,6 +593,147 @@ function PeerMatchPage() {
     setStep("booked");
   };
 
+<<<<<<< HEAD
+=======
+  const handleBookingSafe = async () => {
+    if (!selectedSlot || !selectedVolunteer || loading) return;
+
+    // Warn if identity hasn't resolved yet, but don't block — the backfill
+    // in fetchMyBooking will link the alias once the student revisits this page.
+    if (!aliasId) {
+      console.warn("[handleBookingSafe] aliasId is null — booking will proceed without alias link (will be backfilled on next visit).");
+    }
+
+    setLoading(true);
+
+    try {
+      const { data: reservedSlot, error: reserveError } = await supabase
+        .from("time_slots")
+        .update({ is_booked: true })
+        .eq("id", selectedSlot.id)
+        .eq("is_booked", false)
+        .select("id")
+        .maybeSingle();
+
+      if (reserveError) {
+        throw reserveError;
+      }
+
+      if (!reservedSlot) {
+        toast.error("That slot was just taken. Please choose another one.");
+        await fetchSlots(selectedVolunteer.id);
+        setStep("slots");
+        return;
+      }
+
+      const newToken = crypto.randomUUID().slice(0, 8);
+      const selectedLanguage =
+        surveyAnswers.language?.replace("Mixed / ", "") || "English";
+
+      const safeAliasId = profileExists ? aliasId : null;
+      const bookingPayload = {
+        time_slot_id: selectedSlot.id,
+        anonymous_name: anonName.trim() || "Anonymous",
+        issue_type: selectedIssue,
+        language_preference: selectedLanguage,
+        notes: notes.trim() || null,
+        meeting_token: newToken,
+        handoff_briefing: sessionStorage.getItem("soulSync_handoffBriefing"),
+        // student_alias_id and volunteer_id are omitted here because the column
+        // does not yet exist in the Supabase schema cache (PGRST204).
+        // Run the migration in Supabase SQL Editor to add these columns, then
+        // reload the schema cache (API Settings → Reload) and re-enable them.
+      };
+
+      const { data: newBooking, error: insertError } = await supabase
+        .from("session_bookings")
+        .insert(bookingPayload)
+        .select()
+        .single();
+
+      if (insertError) {
+        // Roll back the slot reservation
+        await supabase
+          .from("time_slots")
+          .update({ is_booked: false })
+          .eq("id", selectedSlot.id);
+        throw insertError;
+      }
+
+      setMeetingToken(newToken);
+
+      if (newBooking) {
+        localStorage.setItem("soulSync_last_booking_id", newBooking.id);
+      }
+
+      setMyBooking({
+        id: newBooking ? newBooking.id : "pending",
+        meeting_token: newToken,
+        anonymous_name: anonName.trim() || "Anonymous",
+        issue_type: selectedIssue,
+        status: "pending",
+        notes: notes.trim() || null,
+        time_slots: {
+          slot_date: selectedSlot.slot_date,
+          start_time: selectedSlot.start_time,
+          end_time: selectedSlot.end_time,
+          volunteers: { id: selectedVolunteer.id, name: selectedVolunteer.name },
+        },
+      });
+
+      setStep("booked");
+      toast.success("Session booked successfully.");
+
+      const roomId = newBooking ? newBooking.id : newToken;
+
+      if (userEmail.trim()) {
+        void sendEmail({
+          data: {
+            to: userEmail.trim(),
+            subject: "Your peer support session is confirmed",
+            html: `<h3>Session Confirmed</h3>
+            <p>Your session with <strong>${selectedVolunteer.name}</strong> is scheduled for <strong>${selectedSlot.slot_date}</strong> at <strong>${selectedSlot.start_time.slice(0, 5)}</strong>.</p>
+            <p>Room ID: <strong>SoulSync-Session-${roomId}</strong></p>
+            <p><a href="https://meet.jit.si/SoulSync-Session-${roomId}">Click to join the meeting at the scheduled time</a></p>
+            <p><em>Your meeting link will also remain visible on the Peer Support page.</em></p>`,
+          }
+        }).catch((emailError) => {
+          console.error("User confirmation email error:", emailError);
+        });
+      }
+
+      const { data: volunteerEmailRow, error: volunteerEmailError } = await supabase
+        .from("volunteers")
+        .select("email")
+        .eq("id", selectedVolunteer.id)
+        .single();
+
+      if (volunteerEmailError) {
+        console.error("Volunteer email fetch error:", volunteerEmailError);
+      } else if (volunteerEmailRow?.email) {
+        void sendEmail({
+          data: {
+            to: volunteerEmailRow.email,
+            subject: "You have a new session booking",
+            html: `<h3>New Session Booking</h3>
+            <p><strong>${anonName.trim() || "Anonymous"}</strong> has booked a session with you on <strong>${selectedSlot.slot_date}</strong> at <strong>${selectedSlot.start_time.slice(0, 5)}</strong>.</p>
+            <p><a href="${window.location.origin}/volunteer/dashboard">Click here to log into your dashboard and view details</a></p>`,
+          }
+        }).catch((emailError) => {
+          console.error("Volunteer notification email error:", emailError);
+        });
+      }
+    } catch (bookingError: any) {
+      console.error("Booking error:", bookingError);
+      toast.error(
+        bookingError?.message || "Failed to confirm the booking. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+>>>>>>> 6904773 (feat: SoulSync full codebase - volunteer dashboard, peer match, identity, email, mood tracker, admin panel)
   const handleFeedback = async () => {
     if (moodRating === null) return;
     setLoading(true);
@@ -1035,7 +1223,11 @@ function PeerMatchPage() {
                   <Button
                     variant="hero"
                     className="w-full mt-6 rounded-xl"
+<<<<<<< HEAD
                     onClick={handleBooking}
+=======
+                    onClick={handleBookingSafe}
+>>>>>>> 6904773 (feat: SoulSync full codebase - volunteer dashboard, peer match, identity, email, mood tracker, admin panel)
                     disabled={loading}
                   >
                     {loading ? "Booking..." : "Confirm Booking"}
