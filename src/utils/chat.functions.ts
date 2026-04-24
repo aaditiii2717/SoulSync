@@ -75,7 +75,7 @@ interface SurveyAnswers {
 export const generateVolunteerBriefing = createServerFn({ method: "POST" })
   .inputValidator((input: { chatReport: ChatReport, surveyAnswers: SurveyAnswers }) => input)
   .handler(async ({ data }) => {
-    const geminiApiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
+    const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY ?? process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
     if (!geminiApiKey) return { briefing: "Briefing unavailable." };
 
     const prompt = `You are a Consulting Psychologist briefing a Peer Supporter volunteer.
@@ -111,7 +111,7 @@ function toGeminiRole(role: ChatMessage["role"]) {
 export const sendChatMessage = createServerFn({ method: "POST" })
   .inputValidator((input: { messages: ChatMessage[], aliasId?: string }) => input)
   .handler(async ({ data }) => {
-    const geminiApiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
+    const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY ?? process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
     const geminiApiBaseUrl = process.env.GEMINI_API_BASE_URL ?? DEFAULT_GEMINI_API_BASE_URL;
     const geminiModel = process.env.GEMINI_MODEL ?? DEFAULT_GEMINI_MODEL;
 
@@ -167,7 +167,7 @@ export const sendChatMessage = createServerFn({ method: "POST" })
 export const updateChatMemory = createServerFn({ method: "POST" })
   .inputValidator((input: { aliasId: string, chatHistory: string }) => input)
   .handler(async ({ data }) => {
-    const geminiApiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
+    const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY ?? process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
     if (!geminiApiKey) return { success: false };
 
     // Summarize the chat into new memory points
@@ -198,7 +198,7 @@ export const updateChatMemory = createServerFn({ method: "POST" })
 export const updatePostSessionMemory = createServerFn({ method: "POST" })
   .inputValidator((input: { aliasId: string, briefing: string, feedback: string }) => input)
   .handler(async ({ data }) => {
-    const geminiApiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
+    const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY ?? process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
     if (!geminiApiKey) return { success: false };
 
     const prompt = `You are updating the long-term memory of a support-AI friend.
@@ -249,7 +249,7 @@ export const generateSessionReport = createServerFn({ method: "POST" })
     }) => input
   )
   .handler(async ({ data }) => {
-    const geminiApiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
+    const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY ?? process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
     if (!geminiApiKey) return { report: "AI Reporting unavailable." };
 
     const prompt = `You are an AI Clinical Assistant helping a Peer Supporter volunteer finalize their session notes.
@@ -282,4 +282,38 @@ Structure it professionally but keep it human-centric for the SoulSync platform.
     const report = result.candidates?.[0]?.content?.parts?.[0]?.text || "No report generated.";
 
     return { report };
+  });
+
+export const provideLetterGuidance = createServerFn({ method: "POST" })
+  .inputValidator((input: { letter: string }) => input)
+  .handler(async ({ data }) => {
+    const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY ?? process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
+    const geminiApiBaseUrl = process.env.GEMINI_API_BASE_URL ?? DEFAULT_GEMINI_API_BASE_URL;
+    const geminiModel = process.env.GEMINI_MODEL ?? DEFAULT_GEMINI_MODEL;
+
+    if (!geminiApiKey) return { guidance: "AI guidance unavailable." };
+
+    const prompt = `You are a compassionate peer support AI. 
+The user has written an expressive letter to process their emotions. 
+Read their letter and provide gentle, non-judgmental guidance and validation. 
+Acknowledge their feelings, highlight their strength, and offer a short soothing thought.
+Do NOT give clinical advice. Keep it warm and concise (1-2 short paragraphs).
+
+User's Letter:
+"${data.letter}"`;
+
+    const response = await fetch(
+      `${geminiApiBaseUrl}/models/${encodeURIComponent(geminiModel)}:generateContent`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": geminiApiKey },
+        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }] }),
+      }
+    );
+
+    if (!response.ok) return { guidance: "I'm having trouble reading your letter right now, but please know your feelings are valid." };
+    const result = await response.json();
+    const guidance = result.candidates?.[0]?.content?.parts?.[0]?.text || "Your feelings are completely valid. Take a deep breath.";
+
+    return { guidance };
   });

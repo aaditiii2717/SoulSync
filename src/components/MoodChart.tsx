@@ -1,7 +1,7 @@
 import { Area, AreaChart, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import type { MoodType } from "./MoodSelector";
 
-const moodValues: Record<MoodType, number> = {
+export const moodValues: Record<MoodType, number> = {
   great: 5,
   good: 4,
   okay: 3,
@@ -9,7 +9,7 @@ const moodValues: Record<MoodType, number> = {
   struggling: 1,
 };
 
-const moodLabels: Record<number, string> = {
+export const moodLabels: Record<number, string> = {
   5: "😄 Great",
   4: "🙂 Good",
   3: "😐 Okay",
@@ -17,33 +17,18 @@ const moodLabels: Record<number, string> = {
   1: "😢 Struggling",
 };
 
-interface MoodEntry {
+export interface ChartDataPoint {
   date: string;
-  mood: MoodType;
+  value: number | null;
+  moodLabel?: string;
+  isAverage?: boolean;
 }
 
-// Demo data
-const demoData: MoodEntry[] = [
-  { date: "Mon", mood: "okay" },
-  { date: "Tue", mood: "low" },
-  { date: "Wed", mood: "struggling" },
-  { date: "Thu", mood: "low" },
-  { date: "Fri", mood: "okay" },
-  { date: "Sat", mood: "good" },
-  { date: "Sun", mood: "great" },
-];
-
-export function MoodChart({ data = demoData }: { data?: MoodEntry[] }) {
-  const chartData = data.map((d) => ({
-    date: d.date,
-    value: moodValues[d.mood],
-    moodLabel: d.mood,
-  }));
-
+export function MoodChart({ data = [] }: { data: ChartDataPoint[] }) {
   return (
     <div className="h-64">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+        <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="moodGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="oklch(0.55 0.08 145)" stopOpacity={0.3} />
@@ -69,13 +54,20 @@ export function MoodChart({ data = demoData }: { data?: MoodEntry[] }) {
           <Tooltip
             content={({ active, payload }) => {
               if (active && payload && payload.length) {
-                const data = payload[0].payload;
+                const data = payload[0].payload as ChartDataPoint;
+                if (data.value === null) return null;
+                
+                const roundedValue = Math.round(data.value);
+                const moodEmoji = moodLabels[roundedValue]?.split(" ")[0] || "";
+                
                 return (
                   <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-xl">
                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{data.date}</div>
                     <div className="flex items-center gap-2">
-                       <span className="text-xl">{moodLabels[data.value]?.split(" ")[0]}</span>
-                       <span className="font-bold text-slate-800 capitalize">{data.moodLabel}</span>
+                       <span className="text-xl">{moodEmoji}</span>
+                       <span className="font-bold text-slate-800 capitalize">
+                         {data.isAverage ? `Avg Score: ${data.value.toFixed(1)}` : data.moodLabel}
+                       </span>
                     </div>
                   </div>
                 );
@@ -90,6 +82,9 @@ export function MoodChart({ data = demoData }: { data?: MoodEntry[] }) {
             strokeWidth={4}
             fill="url(#moodGradient)"
             animationDuration={1500}
+            connectNulls={true}
+            dot={{ r: 4, fill: "white", strokeWidth: 2 }}
+            activeDot={{ r: 6, strokeWidth: 0 }}
           />
         </AreaChart>
       </ResponsiveContainer>

@@ -2,13 +2,13 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, Bot, User, Shield, Sparkles, LogOut, MessageSquareHeart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { sendChatMessage, updateChatMemory } from "@/utils/chat.functions";
+import { sendChatMessage, updateChatMemory, provideLetterGuidance } from "@/utils/chat.functions";
 import { detectEmotions, type DetectedEmotion } from "@/utils/nlp.utils";
 import { HEALING_LIBRARY, type HealingTool } from "@/utils/HealingLibrary";
 import { CrisisMap } from "@/components/CrisisMap";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
-import { X, Play, FileText, ExternalLink } from "lucide-react";
+import { X, Play, FileText, ExternalLink, Loader2 } from "lucide-react";
 
 interface Message {
   id: string;
@@ -43,6 +43,10 @@ export function ChatInterface() {
   const [sessionEmotions, setSessionEmotions] = useState<Record<string, number>>({});
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeTool, setActiveTool] = useState<HealingTool | null>(null);
+  const [isInteractiveLetter, setIsInteractiveLetter] = useState(false);
+  const [letterContent, setLetterContent] = useState("");
+  const [letterGuidance, setLetterGuidance] = useState("");
+  const [isAnalyzingLetter, setIsAnalyzingLetter] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -268,18 +272,82 @@ export function ChatInterface() {
             >
               <motion.div 
                 initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
-                className="w-full max-w-lg bg-card rounded-3xl overflow-hidden shadow-2xl border"
+                className="w-full max-w-lg bg-card rounded-3xl shadow-2xl border flex flex-col max-h-[85vh]"
               >
-                <div className="p-4 border-b flex items-center justify-between">
+                <div className="p-4 border-b flex items-center justify-between shrink-0">
                   <h3 className="font-display font-bold">{activeTool.title}</h3>
-                  <Button variant="ghost" size="icon" onClick={() => setActiveTool(null)}>
+                  <Button variant="ghost" size="icon" onClick={() => {
+                    setActiveTool(null);
+                    setIsInteractiveLetter(false);
+                    setLetterContent("");
+                    setLetterGuidance("");
+                  }}>
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="p-6">
+                <div className="p-6 overflow-y-auto flex-1">
                   {activeTool.type === "text" && (
-                    <div className="bg-muted/50 p-6 rounded-2xl font-serif text-sm leading-relaxed whitespace-pre-wrap italic">
-                      {activeTool.content}
+                    <div className="flex flex-col gap-4">
+                      {!isInteractiveLetter ? (
+                        <>
+                          <div className="bg-muted/50 p-6 rounded-2xl font-serif text-sm leading-relaxed whitespace-pre-wrap italic">
+                            {activeTool.content}
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            className="w-full rounded-xl border-primary/20 hover:bg-primary/5"
+                            onClick={() => {
+                              setIsInteractiveLetter(true);
+                              setLetterContent(activeTool.content);
+                            }}
+                          >
+                            <Sparkles className="mr-2 h-4 w-4 text-primary" />
+                            Write your own letter with AI guidance
+                          </Button>
+                        </>
+                      ) : (
+                        <div className="flex flex-col gap-4">
+                          <textarea
+                            value={letterContent}
+                            onChange={(e) => setLetterContent(e.target.value)}
+                            className="w-full h-48 p-4 rounded-2xl bg-muted/30 border focus:ring-2 focus:ring-primary/20 focus:outline-none resize-none font-serif text-sm"
+                            placeholder="Write your letter here..."
+                          />
+                          {!letterGuidance ? (
+                            <Button 
+                              onClick={async () => {
+                                setIsAnalyzingLetter(true);
+                                try {
+                                  const result = await provideLetterGuidance({ data: { letter: letterContent } });
+                                  setLetterGuidance(result.guidance);
+                                } catch (e) {
+                                  setLetterGuidance("I couldn't read the letter right now, but please know your feelings are valid.");
+                                } finally {
+                                  setIsAnalyzingLetter(false);
+                                }
+                              }}
+                              disabled={isAnalyzingLetter || !letterContent.trim()}
+                              className="w-full rounded-xl"
+                            >
+                              {isAnalyzingLetter ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Sparkles className="mr-2 h-4 w-4" />
+                              )}
+                              Get AI Guidance
+                            </Button>
+                          ) : (
+                            <div className="bg-primary/10 p-4 rounded-xl border border-primary/20 text-sm">
+                              <p className="font-semibold text-primary mb-2 flex items-center gap-2">
+                                <Sparkles className="h-4 w-4" /> AI Feedback
+                              </p>
+                              <ReactMarkdown className="prose prose-sm dark:prose-invert">
+                                {letterGuidance}
+                              </ReactMarkdown>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                   {activeTool.type === "audio" && (
@@ -306,8 +374,13 @@ export function ChatInterface() {
                     </div>
                   )}
                 </div>
-                <div className="p-4 bg-muted/30 border-t flex justify-center">
-                   <Button variant="hero" onClick={() => setActiveTool(null)} className="rounded-xl px-12">
+                <div className="p-4 bg-muted/30 border-t flex justify-center shrink-0">
+                   <Button variant="hero" onClick={() => {
+                     setActiveTool(null);
+                     setIsInteractiveLetter(false);
+                     setLetterContent("");
+                     setLetterGuidance("");
+                   }} className="rounded-xl px-12">
                      Done
                    </Button>
                 </div>

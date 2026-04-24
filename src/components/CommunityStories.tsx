@@ -7,7 +7,7 @@ import { TestimonialVideoModal, Story } from "./TestimonialVideoModal";
 const stories: Story[] = [
   {
     id: "2",
-    name: "Rudraksh",
+    name: "Aayush",
     role: "International Student",
     title: "Community Roadmap",
     quote: "SoulSync gives you a community roadmap. It makes you feel like you aren't just a user, but a part of a movement.",
@@ -29,7 +29,7 @@ const stories: Story[] = [
   },
   {
     id: "4",
-    name: "Aayush",
+    name: "Rudraksh",
     role: "Medical Student",
     title: "Verified Peer Match",
     quote: "My favorite thing about SoulSync is the Verified Peer Match. I got to talk to a real student volunteer who had been exactly where I was.",
@@ -77,7 +77,7 @@ export function CommunityStories() {
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-                  
+
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-500 group-hover:opacity-100 group-hover:scale-110">
                     <div className="h-16 w-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/40 shadow-xl">
                       <Play className="h-7 w-7 text-white fill-white" />
@@ -85,9 +85,9 @@ export function CommunityStories() {
                   </div>
 
                   <div className="absolute bottom-4 left-4 right-4">
-                     <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white translate-y-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
-                        <Users className="h-3 w-3" /> {story.role}
-                     </div>
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white translate-y-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
+                      <Users className="h-3 w-3" /> {story.role}
+                    </div>
                   </div>
                 </div>
 
@@ -99,24 +99,24 @@ export function CommunityStories() {
                     <Star className="h-4 w-4 fill-primary" />
                     <Star className="h-4 w-4 fill-primary" />
                   </div>
-                  
+
                   <h3 className="font-display text-2xl font-semibold leading-tight group-hover:text-primary transition-colors">
                     {story.title}
                   </h3>
-                  
+
                   <div className="mt-6 border-t border-slate-50 pt-6">
                     <div className="flex items-center gap-4">
-                       <div className="h-2 w-2 rounded-full bg-safe animate-pulse" />
-                       <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                         Initial Result: <span className="text-slate-800">{story.impact}</span>
-                       </p>
+                      <div className="h-2 w-2 rounded-full bg-safe animate-pulse" />
+                      <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                        Initial Result: <span className="text-slate-800">{story.impact}</span>
+                      </p>
                     </div>
                     <p className="mt-3 line-clamp-3 text-sm leading-7 text-muted-foreground italic">
                       "{story.quote}"
                     </p>
                     <div className="mt-6 flex items-center justify-between">
-                       <span className="text-xs font-bold text-slate-800">— {story.name}</span>
-                       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Read More →</span>
+                      <span className="text-xs font-bold text-slate-800">— {story.name}</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Read More →</span>
                     </div>
                   </div>
                 </div>
@@ -126,22 +126,22 @@ export function CommunityStories() {
         </div>
 
         <div className="mt-16 flex justify-center">
-           <div className="inline-flex items-center gap-4 rounded-3xl bg-slate-100/50 px-8 py-5 ring-1 ring-slate-100">
-              <div className="flex -space-x-4">
-                 {[1,2,3,4].map(i => (
-                   <div key={i} className="h-10 w-10 rounded-full border-2 border-white bg-slate-200" />
-                 ))}
-              </div>
-              <p className="text-sm font-medium text-slate-600">
-                 Join <span className="font-bold text-slate-900">30+ students</span> who started their healing journey here.
-              </p>
-           </div>
+          <div className="inline-flex items-center gap-4 rounded-3xl bg-slate-100/50 px-8 py-5 ring-1 ring-slate-100">
+            <div className="flex -space-x-4">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="h-10 w-10 rounded-full border-2 border-white bg-slate-200" />
+              ))}
+            </div>
+            <p className="text-sm font-medium text-slate-600">
+              Join <span className="font-bold text-slate-900">30+ students</span> who started their healing journey here.
+            </p>
+          </div>
         </div>
       </div>
 
-       <TestimonialVideoModal 
-        isOpen={!!selectedStory} 
-        onClose={() => setSelectedStory(null)} 
+      <TestimonialVideoModal
+        isOpen={!!selectedStory}
+        onClose={() => setSelectedStory(null)}
         story={selectedStory}
       />
     </section>

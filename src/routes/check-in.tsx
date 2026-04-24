@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { MoodSelector, type MoodType } from "@/components/MoodSelector";
-import { MoodChart } from "@/components/MoodChart";
+import { MoodChart, moodValues } from "@/components/MoodChart";
 import { Button } from "@/components/ui/button";
 import { MessageCircleHeart, BookOpen, TrendingUp, Users, Shield, Sparkles, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -45,7 +45,9 @@ function CheckInPage() {
         return {
           // If we have multiple entries on same day, show time
           date: format(dateObj, "EEE p"), 
-          mood: d.mood as MoodType
+          value: moodValues[d.mood as MoodType],
+          moodLabel: d.mood as MoodType,
+          isAverage: false
         };
       });
       setMoodEntries(formatted);
@@ -82,7 +84,7 @@ function CheckInPage() {
       <Navbar />
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-display text-3xl font-bold">Welcome 👋</h1>
+          <h1 className="font-display text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/80 to-primary/50">Welcome 👋</h1>
           <p className="mt-1 text-muted-foreground">This is your safe space. How are you feeling today?</p>
         </motion.div>
 
@@ -91,7 +93,7 @@ function CheckInPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mt-8 rounded-2xl border bg-card p-6"
+          className="mt-8 rounded-2xl border border-white/20 bg-card/60 backdrop-blur-xl shadow-xl shadow-primary/5 p-6 relative overflow-hidden"
         >
           <h2 className="font-display text-lg font-semibold mb-4 text-center">Quick Check-In</h2>
           <MoodSelector selected={selectedMood} onSelect={handleMoodSelect} />
@@ -119,9 +121,9 @@ function CheckInPage() {
             <h2 className="font-display text-lg font-semibold">What would you like to do?</h2>
             {quickActions.map((action) => (
               <Link key={action.label} to={action.to}>
-                <div className="flex items-center gap-4 rounded-xl border bg-card p-4 hover:shadow-md hover:border-primary/20 transition-all cursor-pointer">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                    <action.icon className="h-5 w-5 text-primary" />
+                <div className="group flex items-center gap-4 rounded-xl border border-border/50 bg-card/80 p-4 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/30 transition-all duration-300 cursor-pointer">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                    <action.icon className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold">{action.label}</h3>
@@ -132,7 +134,7 @@ function CheckInPage() {
             ))}
           </div>
 
-          <div className="lg:col-span-2 rounded-2xl border bg-card p-6">
+          <div className="lg:col-span-2 rounded-2xl border border-white/20 bg-card/60 backdrop-blur-xl shadow-xl shadow-primary/5 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-display text-lg font-semibold">Your Mood Journey</h2>
               <span className="text-xs text-muted-foreground">Last 7 days</span>
@@ -155,12 +157,13 @@ function CheckInPage() {
             { icon: Shield, label: "Safety Score", value: "98%", color: "bg-safe/10 text-safe" },
             { icon: Sparkles, label: "Check-In Streak", value: "5 days", color: "bg-warm/10 text-warm" },
           ].map((stat) => (
-            <div key={stat.label} className="rounded-xl border bg-card p-4 text-center">
-              <div className={`mx-auto flex h-10 w-10 items-center justify-center rounded-xl ${stat.color} mb-2`}>
+            <div key={stat.label} className="group rounded-xl border border-border/50 bg-card/80 p-4 text-center hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className={`mx-auto flex h-10 w-10 items-center justify-center rounded-xl ${stat.color} mb-2 group-hover:scale-110 transition-transform relative z-10`}>
                 <stat.icon className="h-5 w-5" />
               </div>
-              <div className="font-display text-2xl font-bold">{stat.value}</div>
-              <div className="text-xs text-muted-foreground">{stat.label}</div>
+              <div className="font-display text-2xl font-bold relative z-10">{stat.value}</div>
+              <div className="text-xs text-muted-foreground relative z-10">{stat.label}</div>
             </div>
           ))}
         </div>
