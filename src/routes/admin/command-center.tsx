@@ -18,6 +18,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, Cell, AreaChart, Area
 } from 'recharts';
+import { sendEmail } from "@/lib/email";
 
 export const Route = createFileRoute("/admin/command-center")({
   component: CommandCenter,
@@ -108,6 +109,33 @@ function CommandCenter() {
       toast.error("Governance action failed.");
     } else {
       toast.success(`Volunteer ${status === 'verified' ? 'Approved' : 'Rejected'}`);
+      
+      if (status === 'verified') {
+        const vol = volunteers.find(v => v.id === id);
+        if (vol && vol.email) {
+          sendEmail({
+            data: {
+              to: vol.email,
+              subject: "Welcome to SoulSync! Your application is approved 🎉",
+              html: `
+                <div style="font-family: sans-serif; color: #1e293b; max-width: 600px;">
+                  <h2 style="color: #8b5cf6;">Congratulations, ${vol.name || 'Volunteer'}!</h2>
+                  <p>Your application to join the SoulSync peer-support movement has been **Approved**.</p>
+                  <p>You can now log in to the Volunteer Hub to set your availability and start supporting students in need.</p>
+                  <div style="margin: 30px 0;">
+                    <a href="${window.location.origin}/volunteer/dashboard" 
+                       style="background: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                       Enter Volunteer Hub
+                    </a>
+                  </div>
+                  <p style="font-size: 12px; color: #64748b;">Thank you for being part of the resilience mission.</p>
+                </div>
+              `
+            }
+          });
+        }
+      }
+      
       fetchGlobalData();
     }
   };
