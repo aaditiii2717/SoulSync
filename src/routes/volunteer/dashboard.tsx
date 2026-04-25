@@ -21,7 +21,9 @@ import {
   LogOut,
   Info,
   ChevronRight,
-  FileText
+  FileText,
+  Plus,
+  Trash2
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -43,6 +45,11 @@ function VolunteerDashboard() {
   const [volunteer, setVolunteer] = useState<any>(null);
   const [sessions, setSessions] = useState<any[]>([]);
   const [error, setError] = useState("");
+  const [isConfiguringSchedule, setIsConfiguringSchedule] = useState(false);
+  const [slots, setSlots] = useState<{ date: string; startTime: string; endTime: string }[]>([{ date: "", startTime: "10:00", endTime: "10:30" }]);
+  const [isSavingSlots, setIsSavingSlots] = useState(false);
+  const [savedSlots, setSavedSlots] = useState<any[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -82,6 +89,7 @@ function VolunteerDashboard() {
       setVolunteer(data);
       setIsLoggedIn(true);
       fetchSessions(data.id);
+      fetchSavedSlots(data.id);
     }
     setLoading(false);
   };
@@ -94,6 +102,35 @@ function VolunteerDashboard() {
       .order("created_at", { ascending: false });
 
     if (data) setSessions(data);
+  };
+
+  const fetchSavedSlots = async (volunteerId: string) => {
+    setIsLoadingSlots(true);
+    const today = new Date();
+    const localDateStr = today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, '0') + "-" + String(today.getDate()).padStart(2, '0');
+    
+    const { data } = await supabase
+      .from("time_slots")
+      .select("*")
+      .eq("volunteer_id", volunteerId)
+      .gte("slot_date", localDateStr)
+      .order("slot_date", { ascending: true })
+      .order("start_time", { ascending: true });
+    
+    if (data) {
+      const filteredData = data.filter(slot => slot.slot_date >= localDateStr);
+      setSavedSlots(filteredData);
+    }
+    setIsLoadingSlots(false);
+  };
+
+  const formatTimeAMPM = (timeStr: string) => {
+    if (!timeStr) return "";
+    const [hours, minutes] = timeStr.split(':');
+    const h = parseInt(hours, 10);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const formattedHours = h % 12 || 12;
+    return `${formattedHours}:${minutes} ${ampm}`;
   };
 
   const handleGoogleLogin = async () => {
@@ -169,6 +206,51 @@ function VolunteerDashboard() {
     if (!s.time_slots) return false;
     return computeStatus(s.time_slots.slot_date, s.time_slots.start_time, s.time_slots.end_time) === "completed";
   });
+
+  const addSlot = () => setSlots((prev) => [...prev, { date: "", startTime: "10:00", endTime: "10:30" }]);
+  const removeSlot = (idx: number) => setSlots((prev) => prev.filter((_, i) => i !== idx));
+  const updateSlot = (idx: number, field: "date" | "startTime" | "endTime", value: string) => setSlots((prev) => prev.map((s, i) => (i === idx ? { ...s, [field]: value } : s)));
+
+  const handleSaveSlots = async () => {
+    if (!volunteer) return;
+    const validSlots = slots.filter((s) => s.date && s.startTime && s.endTime);
+    if (validSlots.length === 0) {
+      toast.error("Please add at least one valid time slot.");
+      return;
+    }
+    
+    setIsSavingSlots(true);
+    const { error } = await supabase.from("time_slots").insert(
+      validSlots.map((s) => ({
+        volunteer_id: volunteer.id,
+        slot_date: s.date,
+        start_time: s.startTime,
+        end_time: s.endTime,
+      }))
+    );
+    setIsSavingSlots(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("Schedule configured successfully!");
+    setIsConfiguringSchedule(false);
+    setSlots([{ date: "", startTime: "10:00", endTime: "10:30" }]);
+    fetchSavedSlots(volunteer.id);
+  };
+
+  const handleDeleteSlot = async (slotId: string) => {
+    if (!volunteer) return;
+    const { error } = await supabase.from("time_slots").delete().eq("id", slotId);
+    if (error) {
+      toast.error("Failed to delete slot.");
+      return;
+    }
+    toast.success("Slot deleted successfully.");
+    fetchSavedSlots(volunteer.id);
+  };
 
   if (!isLoggedIn) {
     return (
@@ -517,18 +599,119 @@ function VolunteerDashboard() {
               exit={{ opacity: 0, x: -10 }}
             >
               <Card className="p-12 rounded-[4rem] border-white bg-white/70 backdrop-blur-2xl shadow-sm ring-1 ring-slate-200/50 text-center">
-                <div className="h-20 w-20 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 border border-primary/10">
-                  <AlarmClock className="h-10 w-10 text-primary animate-pulse" />
-                </div>
-                <h2 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">Availability Console</h2>
-                <p className="text-lg text-slate-500 max-w-xl mx-auto font-medium">
-                  The 2026 Scheduler is being synchronized with your local time zone. This console allows you to set the windows where students can book your support.
-                </p>
-                <div className="mt-12 flex justify-center">
-                  <Button className="rounded-2xl h-14 px-12 bg-slate-900 text-white font-bold shadow-xl shadow-slate-200">
-                    Configure Schedule
-                  </Button>
-                </div>
+                {!isConfiguringSchedule ? (
+                  <>
+                    <div className="h-20 w-20 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 border border-primary/10">
+                      <AlarmClock className="h-10 w-10 text-primary animate-pulse" />
+                    </div>
+                    <h2 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">Availability Console</h2>
+                    <p className="text-lg text-slate-500 max-w-xl mx-auto font-medium">
+                      The 2026 Scheduler is being synchronized with your local time zone. This console allows you to set the windows where students can book your support.
+                    </p>
+
+                    <div className="mt-8 max-w-lg mx-auto text-left space-y-3">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-bold text-slate-700">Your Upcoming Slots</h3>
+                      </div>
+                      
+                      {isLoadingSlots ? (
+                        <div className="flex justify-center py-6">
+                          <Loader2 className="h-6 w-6 animate-spin text-slate-300" />
+                        </div>
+                      ) : savedSlots.length === 0 ? (
+                        <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 text-center">
+                          <p className="text-sm font-medium text-slate-500">No availability slots added yet.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                          {savedSlots.map((slot) => (
+                            <div key={slot.id} className="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                              <div className="flex items-center gap-4">
+                                <div className="h-10 w-10 bg-primary/5 rounded-xl flex items-center justify-center border border-primary/10">
+                                  <Calendar className="h-4 w-4 text-primary" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-bold text-slate-900">{new Date(slot.slot_date).toLocaleDateString()}</p>
+                                  <p className="text-xs font-medium text-slate-500">{formatTimeAMPM(slot.start_time)} - {formatTimeAMPM(slot.end_time)}</p>
+                                </div>
+                              </div>
+                              <Button variant="ghost" size="icon" onClick={() => handleDeleteSlot(slot.id)} className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-8 flex justify-center">
+                      <Button 
+                        onClick={() => setIsConfiguringSchedule(true)}
+                        className="rounded-2xl h-14 px-12 bg-slate-900 text-white font-bold shadow-xl shadow-slate-200 transition-all hover:bg-slate-800"
+                      >
+                        {savedSlots.length > 0 ? "Add More Slots" : "Configure Schedule"}
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <h2 className="text-2xl font-black text-slate-900 mb-6 tracking-tight">Add Your Available Time Slots</h2>
+                    <div className="space-y-4 max-w-lg mx-auto text-left">
+                      {slots.map((slot, idx) => (
+                        <div key={idx} className="flex items-center gap-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                          <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Date</label>
+                              <input
+                                type="date" value={slot.date}
+                                onChange={(e) => updateSlot(idx, "date", e.target.value)}
+                                min={new Date().toISOString().split("T")[0]}
+                                className="w-full rounded-xl border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Start Time</label>
+                              <input
+                                type="time" value={slot.startTime}
+                                onChange={(e) => updateSlot(idx, "startTime", e.target.value)}
+                                className="w-full rounded-xl border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">End Time</label>
+                              <input
+                                type="time" value={slot.endTime}
+                                onChange={(e) => updateSlot(idx, "endTime", e.target.value)}
+                                className="w-full rounded-xl border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                              />
+                            </div>
+                          </div>
+                          {slots.length > 1 && (
+                            <Button variant="ghost" size="icon" onClick={() => removeSlot(idx)} className="mt-5 h-10 w-10 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl shrink-0">
+                              <Trash2 className="h-5 w-5" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button variant="outline" className="w-full rounded-xl h-12 border-dashed border-slate-300 text-slate-500 hover:bg-slate-50 hover:text-slate-700 font-bold" onClick={addSlot}>
+                        <Plus className="h-4 w-4 mr-2" /> Add Another Slot
+                      </Button>
+                    </div>
+                    <div className="mt-8 flex justify-center gap-4">
+                      <Button variant="ghost" className="rounded-xl h-12 px-8 font-bold text-slate-500 hover:text-slate-700" onClick={() => setIsConfiguringSchedule(false)}>
+                        Cancel
+                      </Button>
+                      <Button className="rounded-xl h-12 px-8 bg-primary text-white font-bold shadow-lg shadow-primary/20 hover:bg-primary/90" onClick={handleSaveSlots} disabled={isSavingSlots}>
+                        {isSavingSlots ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : "Save Availability"}
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
               </Card>
             </motion.div>
           )}
