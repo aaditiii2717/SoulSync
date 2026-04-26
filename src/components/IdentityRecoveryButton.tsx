@@ -124,6 +124,13 @@ export function IdentityRecoveryButton({ className }: IdentityRecoveryButtonProp
     let cancelled = false;
 
     async function loadIdentityProfile() {
+      // Skip if we have an active session (Admin/Volunteer)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setProfileLoading(false);
+        return;
+      }
+
       setProfileLoading(true);
 
       const { data, error } = await supabase

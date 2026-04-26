@@ -9,6 +9,16 @@ interface Place {
   lng: number;
 }
 
+interface OverpassElement {
+  tags: {
+    name?: string;
+    "addr:full"?: string;
+    "addr:street"?: string;
+  };
+  lat: number;
+  lng: number;
+}
+
 export const CrisisMap: React.FC = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [places, setPlaces] = useState<Place[]>([]);
@@ -69,6 +79,7 @@ export const CrisisMap: React.FC = () => {
       }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fetchSupportPlaces = async (lat: number, lng: number, mapInstance: any) => {
       // Use Overpass API (OpenStreetMap) to find hospitals and clinics
       const query = `[out:json];
@@ -84,7 +95,7 @@ export const CrisisMap: React.FC = () => {
         const data = await response.json();
         
         const L = window.L;
-        const results: Place[] = data.elements.slice(0, 8).map((el: any) => ({
+        const results: Place[] = data.elements.slice(0, 8).map((el: OverpassElement) => ({
           name: el.tags.name || "Mental Health Support",
           vicinity: el.tags["addr:full"] || el.tags["addr:street"] || "Nearby Support Center",
           lat: el.lat,
@@ -162,6 +173,7 @@ export const CrisisMap: React.FC = () => {
 // Add Leaflet types to window
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     L: any;
   }
 }

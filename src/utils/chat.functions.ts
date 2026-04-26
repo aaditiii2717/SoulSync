@@ -252,36 +252,53 @@ export const generateSessionReport = createServerFn({ method: "POST" })
     const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY ?? process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
     if (!geminiApiKey) return { report: "AI Reporting unavailable." };
 
-    const prompt = `You are an AI Clinical Assistant helping a Peer Supporter volunteer finalize their session notes.
-Synthesize the following context into a professional, concise, and structured session report (2-3 paragraphs).
+    const prompt = `You are an AI Clinical Assistant for SoulSync, helping a Peer Supporter volunteer finalize their session notes.
+Synthesize the following context into a professional, compassionate, and structured session report (2-3 paragraphs).
 
 Context:
 - Issue Category: ${data.issueType}
 - Pre-Session Briefing: ${data.handoff || "No briefing available."}
 - Student's Initial Note: ${data.studentNote || "No student note provided."}
-- Volunteer's Session Observations: ${data.volunteerDraft || "No draft notes provided."}
+- Volunteer's Session Observations: ${data.volunteerDraft || "No draft notes provided yet."}
 
-The report should include:
-1. **Summary of Interaction**: What themes were discussed?
-2. **Techniques & Support**: What grounding or support was provided?
-3. **Follow-up Recommendations**: What should the next volunteer or the student focus on?
+The report MUST include:
+1. **Summary of Interaction**: Highlight the core emotional themes and student's perspective.
+2. **Support & Grounding**: Detail what techniques (breathing, validation, etc.) were used or suggested.
+3. **Actionable Recommendations**: Specific advice for the next volunteer or student's self-care.
 
-Structure it professionally but keep it human-centric for the SoulSync platform.`;
+Be insightful and vary your vocabulary. Avoid repetitive phrasing. Structure it professionally but maintain the human-centric "SoulSync" warmth.`;
 
-    const response = await fetch(
-      `${DEFAULT_GEMINI_API_BASE_URL}/models/${DEFAULT_GEMINI_MODEL}:generateContent`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": geminiApiKey },
-        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }] }),
+    try {
+      const response = await fetch(
+        `${DEFAULT_GEMINI_API_BASE_URL}/models/${DEFAULT_GEMINI_MODEL}:generateContent`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": geminiApiKey },
+          body: JSON.stringify({ 
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.8,
+              topP: 0.95,
+              maxOutputTokens: 1024,
+            }
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Gemini API Error:", response.status, JSON.stringify(errorData, null, 2));
+        return { report: `Error generating report: ${response.statusText}` };
       }
-    );
 
-    if (!response.ok) return { report: "Error generating report." };
-    const result = await response.json();
-    const report = result.candidates?.[0]?.content?.parts?.[0]?.text || "No report generated.";
+      const result = await response.json();
+      const report = result.candidates?.[0]?.content?.parts?.[0]?.text || "No report generated.";
 
-    return { report };
+      return { report };
+    } catch (err) {
+      console.error("AI Generation Critical Failure:", err);
+      return { report: "Critical error during AI generation." };
+    }
   });
 
 export const provideLetterGuidance = createServerFn({ method: "POST" })

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { MoodSelector, type MoodType } from "@/components/MoodSelector";
@@ -28,7 +28,7 @@ function CheckInPage() {
   const [moodEntries, setMoodEntries] = useState<ChartDataPoint[]>([]);
   const [loadingChart, setLoadingChart] = useState(true);
 
-  const fetchMoodHistory = async () => {
+  const fetchMoodHistory = useCallback(async () => {
     if (!aliasId) return;
     setLoadingChart(true);
     const { data } = await supabase
@@ -40,7 +40,7 @@ function CheckInPage() {
     
     if (data) {
       // Reverse to show chronological order on chart
-      const formatted = data.reverse().map(d => {
+      const formatted = data.reverse().map((d) => {
         const dateObj = new Date(d.created_at);
         return {
           // If we have multiple entries on same day, show time
@@ -53,13 +53,13 @@ function CheckInPage() {
       setMoodEntries(formatted);
     }
     setLoadingChart(false);
-  };
+  }, [aliasId]);
 
   useEffect(() => {
     if (aliasId) {
       fetchMoodHistory();
     }
-  }, [aliasId]);
+  }, [aliasId, fetchMoodHistory]);
 
   const handleMoodSelect = async (mood: MoodType) => {
     setSelectedMood(mood);

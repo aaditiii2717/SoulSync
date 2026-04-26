@@ -8,7 +8,7 @@ import {
   ChevronRight, FileText, CheckCircle, XCircle,
   TrendingUp, ArrowLeft, MoreVertical, Eye,
   Lock, Zap, Globe, Shield, RefreshCw, LogOut,
-  BarChart3, PieChart, Info, Clock, BadgeCheck
+  BarChart3, PieChart, Info, Clock, BadgeCheck, UserCheck
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -45,6 +45,9 @@ function CommandCenter() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"pending" | "approved">("pending");
   const [cvLoading, setCvLoading] = useState<string | null>(null);
+  const [selectedVolunteer, setSelectedVolunteer] = useState<VolunteerRecord | null>(null);
+  const [volunteerSessions, setVolunteerSessions] = useState<any[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
   const navigate = useNavigate();
 
   const getAdminAuthHeaders = async () => {
@@ -62,10 +65,18 @@ function CommandCenter() {
 
   useEffect(() => {
     const checkAdmin = async () => {
+      setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
-      const normalizedEmail = normalizeEmail(session?.user?.email || "");
       
-      if (!session || !session.user?.email || !ALLOWED_ADMIN_EMAILS.includes(normalizedEmail)) {
+      if (!session) {
+        toast.error("Please sign in to access the Command Center.");
+        navigate({ to: "/admin" });
+        return;
+      }
+
+      const normalizedEmail = normalizeEmail(session.user?.email || "");
+      
+      if (!ALLOWED_ADMIN_EMAILS.includes(normalizedEmail)) {
         toast.error("Unauthorized access. Admin privileges required.");
         navigate({ to: "/admin" });
         return;
@@ -75,14 +86,24 @@ function CommandCenter() {
         await ensureAdminVolunteerProfile({
           headers: await getAdminAuthHeaders(),
         });
-      } catch (error) {
-        console.error("Admin provisioning failed:", error);
-        toast.error("We could not verify your admin profile.");
-        navigate({ to: "/admin" });
+        await fetchGlobalData();
+      } catch (error: any) {
+        console.error("Admin verification error:", error);
+        
+        // If it's a network timeout or fetch error, don't kick them out.
+        // Just let them try to 'Sync Data' manually later.
+        const errorMsg = error?.message?.toLowerCase() || "";
+        const isNetworkError = errorMsg.includes("fetch") || errorMsg.includes("timeout") || errorMsg.includes("network");
+
+        if (isNetworkError) {
+          toast.error("Network is slow. Please try clicking 'Sync Data' in a moment.");
+          setLoading(false); // Stop the spinner so they can at least see the hub
+        } else {
+          toast.error("Unauthorized access or profile error.");
+          navigate({ to: "/admin" });
+        }
         return;
       }
-
-      fetchGlobalData();
     };
     
     checkAdmin();
@@ -95,6 +116,7 @@ function CommandCenter() {
       const { count: sessionCount } = await supabase.from("session_bookings").select("*", { count: 'exact', head: true });
       const { data: donations } = await supabase.from("donations").select("amount");
       const { count: pendingCount } = await supabase.from("volunteers").select("*", { count: 'exact', head: true }).eq("verification_status", "pending");
+      const { data: volData } = await supabase.from("volunteers").select("*").order("created_at", { ascending: false });
       
       const totalDonated = donations?.reduce((sum, d) => sum + Number(d.amount), 0) || 0;
 
@@ -105,11 +127,6 @@ function CommandCenter() {
         pendingVolunteers: pendingCount || 0
       });
 
-      const { data: volData } = await supabase
-        .from("volunteers")
-        .select("*")
-        .order("created_at", { ascending: false });
-      
       if (volData) setVolunteers(volData);
     } catch (err) {
       console.error("Fetch error:", err);
@@ -117,6 +134,30 @@ function CommandCenter() {
       setLoading(false);
     }
   };
+
+  const fetchVolunteerSessions = async (volunteerId: string) => {
+    setSessionsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("session_bookings")
+        .select(`*, student_profiles(anonymous_username)`)
+        .eq("volunteer_id", volunteerId)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      if (data) setVolunteerSessions(data);
+    } catch (err) {
+      console.error("Error fetching volunteer sessions:", err);
+    } finally {
+      setSessionsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedVolunteer) {
+      fetchVolunteerSessions(selectedVolunteer.id);
+    }
+  }, [selectedVolunteer]);
 
   const handleVolunteerStatus = async (id: string, status: 'verified' | 'rejected') => {
     try {
@@ -172,17 +213,29 @@ function CommandCenter() {
     }
 
     const cvWindow = window.open("", "_blank");
-    if (cvWindow) {
-      cvWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head><title>Loading CV...</title></head>
-          <body style="margin:0;display:flex;justify-content:center;align-items:center;height:100vh;background:#f8fafc;font-family:sans-serif;">
-            <p>Loading CV securely...</p>
-          </body>
-        </html>
-      `);
+    
+    if (!cvWindow || cvWindow.closed || typeof cvWindow.closed === "undefined") {
+      toast.error("Popup blocked! Please allow popups for this site to view CVs.");
+      return;
     }
+
+    cvWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>SoulSync | Loading CV...</title>
+          <style>
+            body { margin:0; display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; background:#f8fafc; font-family:sans-serif; color:#64748b; }
+            .loader { border: 3px solid #f3f3f3; border-top: 3px solid #8b5cf6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin-bottom: 16px; }
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+          </style>
+        </head>
+        <body>
+          <div class="loader"></div>
+          <p>Loading CV securely...</p>
+        </body>
+      </html>
+    `);
 
     setCvLoading(vol.id);
     try {
@@ -198,24 +251,16 @@ function CommandCenter() {
         ? `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true` 
         : url;
 
-      if (cvWindow) {
-        cvWindow.document.open();
-        cvWindow.document.write(`
-          <!DOCTYPE html>
-          <html>
-            <head><title>Volunteer CV</title></head>
-            <body style="margin:0;padding:0;height:100vh;overflow:hidden;background:#333;">
-              <iframe src="${finalUrl}" width="100%" height="100%" frameborder="0" style="border:none;"></iframe>
-            </body>
-          </html>
-        `);
-        cvWindow.document.close();
-      } else {
-        window.location.assign(finalUrl);
-      }
+      cvWindow.location.replace(finalUrl);
     } catch (err) {
       console.error(err);
-      cvWindow?.close();
+      cvWindow.document.body.innerHTML = `
+        <div style="text-align:center; padding: 40px;">
+          <h2 style="color:#ef4444;">Error Loading CV</h2>
+          <p>We couldn't retrieve the document securely.</p>
+          <button onclick="window.close()" style="margin-top:20px; padding:10px 20px; border-radius:8px; border:none; background:#8b5cf6; color:white; cursor:pointer;">Close Tab</button>
+        </div>
+      `;
       toast.error("An error occurred while opening the CV.");
     } finally {
       setCvLoading(null);
@@ -396,13 +441,13 @@ function CommandCenter() {
                       </tr>
                     ) : displayedVolunteers.map((vol) => (
                       <tr key={vol.id} className="group transition-colors hover:bg-slate-50/50">
-                        <td className="px-8 py-6">
+                        <td className="px-8 py-6 cursor-pointer" onClick={() => setSelectedVolunteer(vol)}>
                           <div className="flex items-center gap-4">
                             <div className="h-10 w-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-black text-slate-400 text-xs">
                               {vol.name?.charAt(0) || "V"}
                             </div>
                             <div>
-                              <p className="font-bold text-slate-900">{vol.name || "Anonymous Volunteer"}</p>
+                              <p className="font-bold text-slate-900 group-hover:text-primary transition-colors">{vol.name || "Anonymous Volunteer"}</p>
                               <p className="text-xs text-slate-500">{vol.email}</p>
                             </div>
                           </div>
@@ -535,6 +580,105 @@ function CommandCenter() {
             </Card>
           </div>
         </div>
+
+       {/* Volunteer Performance Drawer */}
+       <AnimatePresence>
+         {selectedVolunteer && (
+           <motion.div
+             initial={{ opacity: 0 }}
+             animate={{ opacity: 1 }}
+             exit={{ opacity: 0 }}
+             className="fixed inset-0 z-50 flex justify-end bg-slate-900/20 backdrop-blur-sm"
+             onClick={() => setSelectedVolunteer(null)}
+           >
+             <motion.div
+               initial={{ x: "100%" }}
+               animate={{ x: 0 }}
+               exit={{ x: "100%" }}
+               transition={{ type: "spring", damping: 25, stiffness: 200 }}
+               className="h-full w-full max-w-lg bg-white shadow-2xl flex flex-col"
+               onClick={e => e.stopPropagation()}
+             >
+                <div className="flex items-center justify-between p-8 border-b border-slate-100">
+                   <div className="flex items-center gap-4">
+                      <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/10 text-primary font-black text-xl">
+                         {selectedVolunteer.name?.charAt(0)}
+                      </div>
+                      <div>
+                        <h3 className="font-black text-2xl text-slate-900">{selectedVolunteer.name}</h3>
+                        <p className="text-sm font-bold text-slate-500">{selectedVolunteer.email}</p>
+                      </div>
+                   </div>
+                   <button onClick={() => setSelectedVolunteer(null)} className="p-2 rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
+                      <XCircle className="h-7 w-7" />
+                   </button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50 space-y-8">
+                   {/* Performance Summary */}
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-white p-6 rounded-3xl border border-white shadow-sm ring-1 ring-slate-200/50">
+                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Total Impact</p>
+                         <p className="text-2xl font-black text-slate-900">{volunteerSessions.length} Sessions</p>
+                      </div>
+                      <div className="bg-white p-6 rounded-3xl border border-white shadow-sm ring-1 ring-slate-200/50">
+                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Status</p>
+                         <p className="text-2xl font-black text-emerald-600 capitalize">{selectedVolunteer.verification_status}</p>
+                      </div>
+                   </div>
+
+                   {/* Session Timeline */}
+                   <div>
+                      <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2">
+                        <Activity className="h-4 w-4" />
+                        Session Oversight
+                      </h4>
+                      <div className="space-y-4">
+                         {sessionsLoading ? (
+                           <div className="flex justify-center py-12"><RefreshCw className="h-6 w-6 animate-spin text-primary/30" /></div>
+                         ) : volunteerSessions.length === 0 ? (
+                           <div className="text-center py-12 bg-white rounded-[2rem] border border-dashed border-slate-200">
+                              <p className="text-sm font-bold text-slate-400">No sessions recorded yet.</p>
+                           </div>
+                         ) : volunteerSessions.map(session => (
+                           <div key={session.id} className="bg-white p-6 rounded-[2rem] border border-white shadow-sm ring-1 ring-slate-200/50">
+                              <div className="flex items-center justify-between mb-4">
+                                 <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
+                                       <UserCheck className="h-4 w-4" />
+                                    </div>
+                                    <span className="font-bold text-slate-900">{session.student_profiles?.anonymous_username}</span>
+                                 </div>
+                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                    {new Date(session.created_at).toLocaleDateString()}
+                                 </span>
+                              </div>
+                              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                 <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-2">Volunteer Insight</p>
+                                 <p className="text-xs text-slate-600 leading-relaxed italic">
+                                    {session.volunteer_notes || "No notes saved for this session."}
+                                 </p>
+                              </div>
+                           </div>
+                         ))}
+                      </div>
+                   </div>
+                </div>
+
+                <div className="p-8 border-t border-slate-100 bg-white">
+                   <Button 
+                    className="w-full h-14 rounded-2xl bg-slate-900 text-white font-bold text-sm shadow-xl"
+                    onClick={() => {
+                      toast.info(`Generating deep performance report for ${selectedVolunteer.name}...`);
+                    }}
+                   >
+                      Generate Quality Review (AI)
+                   </Button>
+                </div>
+             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       </main>
       <Footer />

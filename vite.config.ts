@@ -171,6 +171,22 @@ export default defineConfig(({ mode }) => {
     server: {
       host: "::",
       port: 8080,
+      watch: {
+        ignored: [
+          '**/.git/**',
+          '**/node_modules/**',
+          '**/dist/**',
+          '**/*.tmp',
+          '**/~$*', // OneDrive temp files
+        ],
+      },
+    },
+    optimizeDeps: {
+      force: true,
+      include: [
+        'react', 'react-dom', 'lucide-react', 'recharts', 'framer-motion', 
+        'sonner', 'clsx', 'tailwind-merge', '@supabase/supabase-js'
+      ],
     },
     define: envDefine,
     resolve: {

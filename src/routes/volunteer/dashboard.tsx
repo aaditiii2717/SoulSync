@@ -22,69 +22,140 @@ import {
   LogOut,
   Info,
   ChevronRight,
-  FileText
+  FileText,
+  Heart,
+  Moon,
+  Star,
+  ShieldCheck,
+  Trophy,
+  Award,
+  Zap,
+  Medal,
+  Users
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { generateSessionReport } from "@/utils/chat.functions";
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, 
+  Tooltip, ResponsiveContainer 
+} from 'recharts';
+import { Tables } from "@/integrations/supabase/types";
+
+type Volunteer = Tables<"volunteers">;
+type Session = Tables<"session_bookings"> & {
+  student_profiles: {
+    anonymous_username: string;
+    memory_context: string | null;
+  } | null;
+  time_slots: Tables<"time_slots"> | null;
+};
+
+interface CRMNote {
+  id: string;
+  content: string;
+  created_at: string;
+}
 
 export const Route = createFileRoute("/volunteer/dashboard")({
   component: VolunteerDashboard,
 });
 
-type Tab = "sessions" | "slots";
+type Tab = "overview" | "sessions" | "slots" | "insight";
 
 function VolunteerDashboard() {
-  const [activeTab, setActiveTab] = useState<Tab>("sessions");
+  const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(true);
-  const [volunteer, setVolunteer] = useState<any>(null);
-  const [sessions, setSessions] = useState<any[]>([]);
+  const [volunteer, setVolunteer] = useState<Volunteer | null>(null);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const [timeSlots, setTimeSlots] = useState<any[]>([]);
+  const [timeSlots, setTimeSlots] = useState<Tables<"time_slots">[]>([]);
   const [slotDate, setSlotDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [slotsLoading, setSlotsLoading] = useState(false);
 
-  const [selectedSession, setSelectedSession] = useState<any>(null);
-  const [crmNotes, setCrmNotes] = useState<any[]>([]);
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [crmNotes, setCrmNotes] = useState<CRMNote[]>([]);
   const [newNote, setNewNote] = useState("");
   const [notesLoading, setNotesLoading] = useState(false);
+  const [moodHistory, setMoodHistory] = useState<Tables<"mood_entries">[]>([]);
+  const [globalMoods, setGlobalMoods] = useState<Tables<"mood_entries">[]>([]);
 
-  useEffect(() => {
-    checkUser();
+
+
+  const fetchTimeSlots = useCallback(async (volunteerId: string) => {
+    setSlotsLoading(true);
+    try {
+      const todayDateString = new Date().toISOString().split("T")[0];
+      await supabase
+        .from("time_slots")
+        .delete()
+        .eq("volunteer_id", volunteerId)
+        .lt("slot_date", todayDateString);
+      
+      const { data, error } = await supabase
+        .from("time_slots")
+        .select("*")
+        .eq("volunteer_id", volunteerId)
+        .order("slot_date", { ascending: true })
+        .order("start_time", { ascending: true });
+        
+      if (error) throw error;
+      if (data) setTimeSlots(data);
+    } catch (err) {
+      console.error("Error fetching time slots:", err);
+      toast.error("Failed to load availability schedule.");
+    } finally {
+      setSlotsLoading(false);
+    }
   }, []);
 
-  useEffect(() => {
-    if (volunteer && activeTab === "slots") {
-      fetchTimeSlots(volunteer.id);
+  const fetchSessions = useCallback(async (volunteerId: string) => {
+    try {
+      let query = supabase
+        .from("session_bookings")
+        .select(`*, student_profiles(anonymous_username, memory_context), time_slots(*)`)
+        .neq("status", "cancelled")
+        .order("created_at", { ascending: false });
+      
+      // If NOT an admin, only see assigned sessions. 
+      // Super Admins see the whole global queue.
+      if (!volunteer?.is_admin) {
+        query = query.eq("volunteer_id", volunteerId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error("Supabase Error fetching sessions:", error);
+        throw error;
+      }
+      
+      if (data) {
+        const enrichedData = await Promise.all(data.map(async (session) => {
+          const slotId = session.time_slot_id;
+          if (!session.time_slots && slotId) {
+             const { data: slotData } = await supabase.from("time_slots").select("*").eq("id", slotId).single();
+             return { ...session, time_slots: slotData } as Session;
+          }
+          return session as Session;
+        }));
+        setSessions(enrichedData);
+      }
+    } catch (err) {
+      console.error("Error in fetchSessions:", err);
     }
-  }, [activeTab, volunteer]);
+  }, [volunteer?.is_admin]);
 
-  useEffect(() => {
-    if (selectedSession) {
-      fetchNotes(selectedSession.id);
-    }
-  }, [selectedSession]);
-
-  const checkUser = async () => {
-    setLoading(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      await verifyAndFetchData(session.user.email!);
-    } else {
-      setLoading(false);
-    }
-  };
-
-  const verifyAndFetchData = async (userEmail: string) => {
+  const verifyAndFetchData = useCallback(async (userEmail: string) => {
     const { data, error: volError } = await supabase
       .from("volunteers")
       .select("*")
@@ -110,66 +181,21 @@ function VolunteerDashboard() {
       fetchTimeSlots(data.id);
     }
     setLoading(false);
-  };
+  }, [fetchSessions, fetchTimeSlots]);
 
-  const fetchTimeSlots = async (volunteerId: string) => {
-    setSlotsLoading(true);
-    try {
-      const todayDateString = new Date().toISOString().split("T")[0];
-      await supabase
-        .from("time_slots")
-        .delete()
-        .eq("volunteer_id", volunteerId)
-        .lt("slot_date", todayDateString);
-      
-      const { data, error } = await supabase
-        .from("time_slots")
-        .select("*")
-        .eq("volunteer_id", volunteerId)
-        .order("slot_date", { ascending: true })
-        .order("start_time", { ascending: true });
-        
-      if (error) throw error;
-      if (data) setTimeSlots(data);
-    } catch (err) {
-      console.error("Error fetching time slots:", err);
-      toast.error("Failed to load availability schedule.");
-    } finally {
-      setSlotsLoading(false);
+  const checkUser = useCallback(async () => {
+    setLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      await verifyAndFetchData(session.user.email!);
+    } else {
+      setLoading(false);
     }
-  };
+  }, [verifyAndFetchData]);
 
-  const fetchSessions = async (volunteerId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("session_bookings")
-        .select(`*, student_profiles(anonymous_username, memory_context), time_slots(*)`)
-        .eq("volunteer_id", volunteerId)
-        .neq("status", "cancelled")
-        .order("created_at", { ascending: false });
-      
-      if (error) {
-        console.error("Supabase Error fetching sessions:", error);
-        throw error;
-      }
-      
-      if (data) {
-        const enrichedData = await Promise.all(data.map(async (session) => {
-          const slotId = session.time_slot_id || session.slot_id;
-          if (!session.time_slots && slotId) {
-             const { data: slotData } = await supabase.from("time_slots").select("*").eq("id", slotId).single();
-             return { ...session, time_slots: slotData };
-          }
-          return session;
-        }));
-        setSessions(enrichedData);
-      }
-    } catch (err) {
-      console.error("Error in fetchSessions:", err);
-    }
-  };
 
-  const fetchNotes = async (sessionId: string) => {
+
+  const fetchNotes = useCallback(async (sessionId: string) => {
     try {
       setNotesLoading(true);
       const { data, error } = await supabase
@@ -189,7 +215,7 @@ function VolunteerDashboard() {
     } finally {
       setNotesLoading(false);
     }
-  };
+  }, []);
 
   const handleSaveNote = async () => {
     if (!newNote.trim() || !selectedSession || !volunteer) return;
@@ -213,6 +239,61 @@ function VolunteerDashboard() {
     }
   };
 
+  const fetchStudentMoodHistory = useCallback(async (aliasId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("mood_entries")
+        .select("*")
+        .eq("alias_id", aliasId)
+        .order("created_at", { ascending: true });
+      
+      if (error) throw error;
+      if (data) setMoodHistory(data);
+    } catch (err) {
+      console.error("Error fetching mood history:", err);
+    }
+  }, []);
+
+  const fetchGlobalMoods = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("mood_entries")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      
+      if (error) throw error;
+      if (data) setGlobalMoods(data);
+    } catch (err) {
+      console.error("Error fetching global moods:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkUser();
+  }, [checkUser]);
+
+  useEffect(() => {
+    if (volunteer && activeTab === "slots") {
+      fetchTimeSlots(volunteer.id);
+    }
+  }, [activeTab, volunteer, fetchTimeSlots]);
+
+  useEffect(() => {
+    if (selectedSession) {
+      fetchNotes(selectedSession.id);
+      if (selectedSession.student_alias_id) {
+        fetchStudentMoodHistory(selectedSession.student_alias_id);
+      }
+    }
+  }, [selectedSession, fetchNotes, fetchStudentMoodHistory]);
+
+  useEffect(() => {
+    if (volunteer?.is_admin && activeTab === "insight") {
+      fetchGlobalMoods();
+    }
+  }, [activeTab, volunteer, fetchGlobalMoods]);
+
   const handleAIGenerate = async () => {
     if (!selectedSession) return;
     setNotesLoading(true);
@@ -235,7 +316,7 @@ function VolunteerDashboard() {
     }
   };
 
-  const handleAddSlot = async (e) => {
+  const handleAddSlot = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!volunteer) return;
     try {
@@ -294,7 +375,7 @@ function VolunteerDashboard() {
     }
   };
 
-  const handleEmailAuth = async (e) => {
+  const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -508,9 +589,25 @@ function VolunteerDashboard() {
       
       {/* Dynamic Ambient Background */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-5%] right-[-5%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px]" />
-        <div className="absolute bottom-[-5%] left-[-5%] w-[40%] h-[40%] rounded-full bg-calm/10 blur-[120px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(#00000005_1.5px,transparent_1.5px)] bg-[size:40px_40px]" />
+        <motion.div 
+          animate={{ 
+            x: [0, 100, 0], 
+            y: [0, 50, 0],
+            scale: [1, 1.2, 1] 
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute top-[-5%] right-[-5%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px]" 
+        />
+        <motion.div 
+          animate={{ 
+            x: [0, -100, 0], 
+            y: [0, -50, 0],
+            scale: [1, 1.1, 1] 
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+          className="absolute bottom-[-5%] left-[-5%] w-[40%] h-[40%] rounded-full bg-calm/20 blur-[120px]" 
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(#00000008_1px,transparent_1px)] bg-[size:32px_32px]" />
       </div>
 
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-12 lg:px-12">
@@ -553,24 +650,26 @@ function VolunteerDashboard() {
         </div>
 
         {/* Console Nav */}
-        <div className="flex gap-2 mb-10 bg-white/70 backdrop-blur-xl border border-white ring-1 ring-slate-200/50 rounded-[2rem] p-2 w-fit shadow-sm">
+        <div className="flex gap-2 mb-10 bg-white/40 backdrop-blur-3xl border border-white/40 ring-1 ring-white/20 rounded-[2.5rem] p-2 w-fit shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]">
           {[
+            { key: "overview" as Tab, label: "My Impact", icon: <Trophy className="h-4 w-4" /> },
             { key: "sessions" as Tab, label: "Response Queue", icon: <LayoutDashboard className="h-4 w-4" />, badge: upcomingSessions.length },
-            { key: "slots" as Tab, label: "Platform Availability", icon: <AlarmClock className="h-4 w-4" /> },
+            { key: "slots" as Tab, label: "Availability", icon: <AlarmClock className="h-4 w-4" /> },
+            ...(volunteer?.is_admin ? [{ key: "insight" as Tab, label: "Global Insight", icon: <TrendingUp className="h-4 w-4" /> }] : []),
           ].map(t => (
             <button 
               key={t.key} 
               onClick={() => setActiveTab(t.key)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-[1.5rem] text-sm font-bold transition-all ${
+              className={`flex items-center gap-2 px-8 py-3.5 rounded-[2rem] text-sm font-black transition-all duration-500 ${
                 activeTab === t.key 
-                ? "bg-slate-900 text-white shadow-lg" 
-                : "text-slate-500 hover:bg-slate-50"
+                ? "bg-slate-900 text-white shadow-[0_10px_20px_rgba(0,0,0,0.2)] scale-105" 
+                : "text-slate-500 hover:bg-white/50 hover:text-slate-800"
               }`}
             >
               {t.icon}
-              {t.label}
+              <span className="tracking-tight">{t.label}</span>
               {t.badge ? (
-                <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-black text-white">
+                <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-black text-white animate-pulse">
                   {t.badge}
                 </span>
               ) : null}
@@ -580,7 +679,151 @@ function VolunteerDashboard() {
 
         {/* Tab Content */}
         <AnimatePresence mode="wait">
-           {activeTab === "sessions" ? (
+           {activeTab === "overview" ? (
+             <motion.div
+               key="overview"
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               exit={{ opacity: 0, y: -10 }}
+               className="space-y-10"
+             >
+               {/* Badge Ribbon */}
+               <div className="bg-white/70 backdrop-blur-2xl p-8 rounded-[3rem] border border-white ring-1 ring-slate-200/50 shadow-sm">
+                 <div className="flex items-center justify-between mb-8">
+                   <div>
+                     <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                       <Award className="h-6 w-6 text-primary" />
+                       Your Achievement Badges
+                     </h2>
+                     <p className="text-sm font-medium text-slate-500 mt-1">Milestones earned through your support journey.</p>
+                   </div>
+                   <div className="flex -space-x-2">
+                      {[1, 2, 3].map(i => (
+                        <div key={i} className="h-10 w-10 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400">?</div>
+                      ))}
+                   </div>
+                 </div>
+
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                   {[
+                     { id: 'listener', name: 'Empathetic Listener', desc: 'Completed 5 sessions', icon: <Heart className="h-6 w-6" />, color: 'from-rose-400 to-rose-600', earned: completedSessions.length >= 5 },
+                     { id: 'night', name: 'Night Owl', desc: 'Late night support', icon: <Moon className="h-6 w-6" />, color: 'from-indigo-400 to-indigo-600', earned: sessions.some(s => s.time_slots && parseInt(s.time_slots.start_time.split(":")[0]) >= 20) },
+                     { id: 'veteran', name: '10-Session Hero', desc: 'Reached 10 sessions', icon: <Star className="h-6 w-6" />, color: 'from-amber-400 to-amber-600', earned: completedSessions.length >= 10 },
+                     { id: 'savior', name: 'Crisis Guard', desc: 'Handled high-risk', icon: <ShieldCheck className="h-6 w-6" />, color: 'from-emerald-400 to-emerald-600', earned: sessions.some(s => s.issue_type === 'Crisis' || s.issue_type === 'Emergency') },
+                   ].map(badge => (
+                     <motion.div 
+                       key={badge.id} 
+                       whileHover={badge.earned ? { y: -5, scale: 1.02 } : {}}
+                       className={`p-6 rounded-[2.5rem] border transition-all duration-500 ${badge.earned ? 'bg-white/80 border-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)]' : 'bg-slate-50/30 border-dashed border-slate-200 opacity-50'}`}
+                     >
+                        <div className={`h-16 w-16 rounded-[1.5rem] flex items-center justify-center mb-5 transition-all ${badge.earned ? `bg-gradient-to-br ${badge.color} text-white shadow-xl shadow-slate-200` : 'bg-slate-200 text-slate-400'}`}>
+                          {badge.earned ? badge.icon : <Lock className="h-6 w-6" />}
+                        </div>
+                        <h4 className={`font-black text-sm tracking-tight ${badge.earned ? 'text-slate-900' : 'text-slate-400'}`}>{badge.name}</h4>
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                           <div className={`h-1.5 w-1.5 rounded-full ${badge.earned ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">{badge.desc}</p>
+                        </div>
+                     </motion.div>
+                   ))}
+                 </div>
+               </div>
+
+               {/* Impact Analytics */}
+               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <Card className="lg:col-span-2 p-10 rounded-[3rem] border-white/40 bg-slate-950 text-white relative overflow-hidden shadow-2xl ring-1 ring-white/10">
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-3 mb-10">
+                        <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30">
+                           <Zap className="h-5 w-5 text-primary" />
+                        </div>
+                        <h3 className="text-2xl font-black tracking-tight">SoulSync Global Impact</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-12">
+                        <div className="space-y-3">
+                           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Listen-Time</p>
+                           <p className="text-5xl font-black text-white tabular-nums">{formatDuration(activeMinutes)}</p>
+                           <div className="flex items-center gap-2">
+                              <TrendingUp className="h-3 w-3 text-emerald-400" />
+                              <p className="text-xs text-emerald-400/80 font-bold">+12.4% Momentum</p>
+                           </div>
+                        </div>
+                        <div className="space-y-3">
+                           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Lives Touched</p>
+                           <p className="text-5xl font-black text-white tabular-nums">{new Set(completedSessions.map(s => s.student_alias_id)).size}</p>
+                           <div className="flex items-center gap-2">
+                              <Heart className="h-3 w-3 text-rose-400" />
+                              <p className="text-xs text-rose-400/80 font-bold">Spiritual Growth</p>
+                           </div>
+                        </div>
+                        <div className="space-y-3">
+                           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Reliability</p>
+                           <p className="text-5xl font-black text-white tabular-nums">99.2%</p>
+                           <div className="flex items-center gap-2">
+                              <Award className="h-3 w-3 text-primary" />
+                              <p className="text-xs text-primary/80 font-bold">Top Tier Peer</p>
+                           </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-16 p-8 rounded-[2rem] bg-white/5 border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 hover:bg-white/[0.07] transition-all">
+                         <div className="flex items-center gap-5">
+                            <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
+                               <CheckCircle className="h-7 w-7" />
+                            </div>
+                            <div>
+                               <p className="text-base font-black">Clinical Integrity Standard</p>
+                               <p className="text-xs text-slate-400 font-medium">Your session reports exceed the platform's empathy threshold.</p>
+                            </div>
+                         </div>
+                         <Button className="rounded-xl bg-white text-slate-900 hover:bg-slate-100 text-[10px] font-black uppercase tracking-[0.2em] px-8 h-12">View Metrics</Button>
+                      </div>
+                    </div>
+
+                    {/* Advanced Decorative Background */}
+                    <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-primary/20 blur-[120px] rounded-full animate-pulse" />
+                    <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-emerald-500/10 blur-[120px] rounded-full" />
+                  </Card>
+
+                  <div className="space-y-6">
+                    <Card className="p-8 rounded-[3rem] border-white bg-white/70 backdrop-blur-xl shadow-sm border border-white ring-1 ring-slate-200/50">
+                      <h4 className="font-black text-slate-900 mb-6 flex items-center gap-2">
+                        <Users className="h-5 w-5 text-indigo-500" />
+                        Community Praise
+                      </h4>
+                      <div className="space-y-6">
+                         <div className="relative">
+                            <p className="text-sm text-slate-600 italic leading-relaxed">
+                              "Thank you for just listening without judging. I feel much lighter tonight."
+                            </p>
+                            <p className="text-[10px] font-black text-indigo-500 mt-3 uppercase tracking-widest">— Anonymous Student</p>
+                         </div>
+                         <div className="h-px bg-slate-100" />
+                         <div className="relative">
+                            <p className="text-sm text-slate-600 italic leading-relaxed">
+                              "The breathing technique you showed me actually helped during my exam today!"
+                            </p>
+                            <p className="text-[10px] font-black text-indigo-500 mt-3 uppercase tracking-widest">— Anonymous Student</p>
+                         </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-8 rounded-[3rem] border-none bg-gradient-to-br from-primary to-primary/80 text-white shadow-xl group cursor-pointer overflow-hidden relative">
+                      <div className="relative z-10">
+                        <Medal className="h-10 w-10 mb-4 group-hover:scale-110 transition-transform" />
+                        <h4 className="font-black text-lg">Next Milestone</h4>
+                        <p className="text-sm text-white/80 mt-1 mb-6">Support 5 more students to reach 'Mentor' status.</p>
+                        <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
+                           <div className="bg-white h-full w-[60%]" />
+                        </div>
+                      </div>
+                      <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all" />
+                    </Card>
+                  </div>
+               </div>
+             </motion.div>
+           ) : activeTab === "sessions" ? (
              <motion.div 
                key="sessions"
                initial={{ opacity: 0, x: -10 }} 
@@ -616,7 +859,7 @@ function VolunteerDashboard() {
                            <div className="flex items-center gap-4 text-xs font-bold text-slate-400">
                              <div className="flex items-center gap-1.5">
                                <Calendar className="h-3 w-3" />
-                               {new Date(session.time_slots?.slot_date).toLocaleDateString()}
+                                {session.time_slots?.slot_date && new Date(session.time_slots.slot_date).toLocaleDateString()}
                              </div>
                              <div className="flex items-center gap-1.5">
                                <Clock className="h-3 w-3" />
@@ -661,7 +904,7 @@ function VolunteerDashboard() {
                             </div>
                             <div>
                                <p className="text-sm font-bold text-slate-800">{session.student_profiles?.anonymous_username}</p>
-                               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{new Date(session.time_slots?.slot_date).toLocaleDateString()}</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{session.time_slots?.slot_date && new Date(session.time_slots.slot_date).toLocaleDateString()}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -712,7 +955,7 @@ function VolunteerDashboard() {
                   </Card>
                </div>
              </motion.div>
-           ) : (
+           ) : activeTab === "slots" ? (
              <motion.div 
                key="slots"
                initial={{ opacity: 0, x: 10 }} 
@@ -743,15 +986,15 @@ function VolunteerDashboard() {
                       <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary opacity-50" /></div>
                    ) : (
                       <div className="space-y-6">
-                         {Object.entries(timeSlots.reduce((acc: any, slot: any) => {
-                           if (!acc[slot.slot_date]) acc[slot.slot_date] = [];
-                           acc[slot.slot_date].push(slot);
-                           return acc;
-                         }, {})).map(([date, slots]: [string, any]) => (
+                          {Object.entries(timeSlots.reduce((acc: Record<string, Tables<"time_slots">[]>, slot: Tables<"time_slots">) => {
+                            if (!acc[slot.slot_date]) acc[slot.slot_date] = [];
+                            acc[slot.slot_date].push(slot);
+                            return acc;
+                          }, {})).map(([date, slots]: [string, Tables<"time_slots">[]]) => (
                            <div key={date}>
                               <h3 className="font-bold text-slate-900 mb-3">{new Date(date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</h3>
                               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                 {slots.map((slot: any) => (
+                                 {slots.map((slot: Tables<"time_slots">) => (
                                    <div key={slot.id} className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
                                       <div className="flex items-center gap-2">
                                          <Clock className="h-4 w-4 text-slate-400" />
@@ -770,6 +1013,56 @@ function VolunteerDashboard() {
                          )}
                       </div>
                    )}
+                </Card>
+             </motion.div>
+           ) : (
+             <motion.div 
+               key="insight"
+               initial={{ opacity: 0, scale: 0.98 }} 
+               animate={{ opacity: 1, scale: 1 }} 
+               exit={{ opacity: 0, scale: 0.98 }}
+               className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+             >
+                <Card className="p-8 rounded-[3rem] border-white bg-white/70 backdrop-blur-2xl shadow-sm ring-1 ring-slate-200/50">
+                  <h3 className="text-xl font-black mb-6 flex items-center gap-3">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    Global Mood Velocity
+                  </h3>
+                  <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                       <AreaChart data={globalMoods.map((m) => ({ 
+                        name: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 
+                        value: ['struggling', 'low', 'okay', 'good', 'great'].indexOf(m.mood) + 1 
+                      })).reverse()}>
+                        <defs>
+                          <linearGradient id="colorGlobal" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="name" hide />
+                        <YAxis hide domain={[0, 6]} />
+                         <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                        <Area type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={4} fill="url(#colorGlobal)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+
+                <Card className="p-8 rounded-[3rem] border-white bg-white/70 backdrop-blur-2xl shadow-sm ring-1 ring-slate-200/50">
+                   <h3 className="text-xl font-black mb-6">Recent Mood Pulse</h3>
+                   <div className="space-y-4">
+                      {globalMoods.slice(0, 6).map((m, i) => (
+                        <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                           <div className="flex items-center gap-3">
+                              <div className={`h-2 w-2 rounded-full ${m.mood === 'distressed' ? 'bg-red-500' : 'bg-emerald-500'}`} />
+                              <span className="text-sm font-bold capitalize">{m.mood}</span>
+                           </div>
+                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Date(m.created_at).toLocaleTimeString()}</span>
+                        </div>
+                      ))}
+                   </div>
                 </Card>
              </motion.div>
            )}
@@ -808,11 +1101,25 @@ function VolunteerDashboard() {
                
                <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 bg-slate-50">
                  {selectedSession.student_profiles?.memory_context && (
-                   <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 shadow-sm">
-                     <h4 className="text-xs font-black uppercase tracking-widest text-emerald-600 mb-3 flex items-center gap-2"><MessageSquare className="h-4 w-4" /> Patient Historical Context</h4>
-                     <p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedSession.student_profiles.memory_context}</p>
-                   </div>
-                 )}
+                    <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 shadow-sm">
+                      <h4 className="text-xs font-black uppercase tracking-widest text-emerald-600 mb-3 flex items-center gap-2"><MessageSquare className="h-4 w-4" /> Patient Historical Context</h4>
+                      <p className="text-sm text-slate-700 whitespace-pre-wrap mb-4">{selectedSession.student_profiles.memory_context}</p>
+                      
+                      {/* Mood Swing Chart */}
+                      {moodHistory.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-emerald-100">
+                          <h5 className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-3">Mood Swing Analysis</h5>
+                          <div className="h-32 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                               <AreaChart data={moodHistory.map(m => ({ date: m.created_at, val: ['struggling', 'low', 'okay', 'good', 'great'].indexOf(m.mood) + 1 }))}>
+                                <Area type="monotone" dataKey="val" stroke="#10b981" fill="#10b981" fillOpacity={0.1} strokeWidth={2} />
+                              </AreaChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                  {selectedSession.handoff_briefing && (
                    <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 shadow-sm">
                      <h4 className="text-xs font-black uppercase tracking-widest text-primary mb-3 flex items-center gap-2"><MessageSquare className="h-4 w-4" /> AI Handoff Briefing (Current Session)</h4>
@@ -851,7 +1158,12 @@ function VolunteerDashboard() {
                          disabled={notesLoading}
                          className="flex-1 rounded-xl border-primary/30 text-primary font-bold h-11"
                        >
-                         {notesLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "✨ AI Suggest Notes"}
+                         {notesLoading ? (
+                           <span className="flex items-center gap-2">
+                             <Loader2 className="h-4 w-4 animate-spin" />
+                             Thinking...
+                           </span>
+                         ) : "✨ AI Suggest Notes"}
                        </Button>
                        <Button 
                          onClick={handleSaveNote}

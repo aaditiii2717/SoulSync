@@ -37,7 +37,7 @@ We mapped the 10 psychological reasons why users avoid help and built SoulSync t
 
 ## 5. Intelligent Synthesis: The Briefing Report
 We don't just pass text; we pass **intelligence**.
-- **Gemini Synthesis**: Our system uses Gemini 2.5 Flash to analyze the history and emotional state of a student, producing a professional **Volunteer Briefing**.
+- **Gemini Synthesis**: Our system uses Gemini 1.5 Flash to analyze the history and emotional state of a student, producing a professional **Volunteer Briefing**.
 - **Clinical Insight**: The report includes specific therapeutic suggestions (CBT grounding, validation techniques) so the volunteer knows exactly how to help before the first "Hello."
 
 ## 6. Volunteer Management: The "7 Cups" Model

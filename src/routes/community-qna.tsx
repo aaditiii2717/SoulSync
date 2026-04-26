@@ -3,7 +3,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { HelpCircle, Heart, MessageCircle, ChevronDown, Plus, Sparkles, Loader2, Send, Info } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAnonymousIdentity } from "@/hooks/useAnonymousIdentity";
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,7 @@ function CommunityQnAPage() {
   const [activeResponse, setActiveResponse] = useState("");
   const [isPostingResponse, setIsPostingResponse] = useState(false);
 
-  const fetchQuestions = async () => {
+  const fetchQuestions = useCallback(async () => {
     setIsLoading(true);
     const { data, error } = await supabase
       .from("community_questions")
@@ -62,13 +62,13 @@ function CommunityQnAPage() {
     if (error) {
       console.error("Error fetching Q&A:", error);
     } else {
-      setQnaItems(data?.map(q => ({
+      setQnaItems((data as QnAItem[])?.map(q => ({
         ...q,
         responses: q.qna_responses || []
-      })) as QnAItem[] || []);
+      })) || []);
     }
     setIsLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchQuestions();
@@ -81,7 +81,7 @@ function CommunityQnAPage() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [fetchQuestions]);
 
   const handleAsk = async () => {
     if (!newQuestion.trim() || !aliasId) return;

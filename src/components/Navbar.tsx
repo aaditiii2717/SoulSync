@@ -11,11 +11,15 @@ import {
   UserCheck,
   Users,
   X,
+  ShieldCheck
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { ALLOWED_ADMIN_EMAILS, normalizeEmail } from "@/lib/admin-governance";
 
 import { IdentityRecoveryButton } from "@/components/IdentityRecoveryButton";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { Session } from "@supabase/supabase-js";
 
 const exploreLinks = [
   { to: "/check-in", label: "My Check-In", desc: "How are you feeling?", icon: ClipboardCheck },
@@ -31,7 +35,31 @@ export function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const updateAuthStatus = (session: Session | null) => {
+      const email = session?.user?.email || null;
+      setUserEmail(email);
+      if (email) {
+        setIsAdmin(ALLOWED_ADMIN_EMAILS.includes(normalizeEmail(email)));
+      } else {
+        setIsAdmin(false);
+      }
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      updateAuthStatus(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      updateAuthStatus(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -136,14 +164,44 @@ export function Navbar() {
             </div>
 
             <div className="hidden shrink-0 md:flex items-center gap-2 lg:gap-3">
-              <IdentityRecoveryButton className="max-w-[15rem] lg:max-w-[18rem]" />
-              <Link to="/chat">
-                <Button variant="hero" size="default" className="rounded-full px-4 lg:px-5 xl:px-6">
-                  <span className="lg:hidden">Get Support</span>
-                  <span className="hidden lg:inline xl:hidden">Start Chat</span>
-                  <span className="hidden xl:inline">Start a Conversation</span>
-                </Button>
-              </Link>
+              {userEmail ? (
+                <div className="flex items-center gap-3">
+                  <div className="hidden flex-col items-end xl:flex">
+                    <span className="text-[0.65rem] font-bold uppercase tracking-wider text-muted-foreground">Logged in as</span>
+                    <span className="text-sm font-semibold text-foreground truncate max-w-[12rem]">{userEmail}</span>
+                  </div>
+                  {isAdmin && (
+                    <Link to="/admin/command-center">
+                      <Button variant="outline" size="sm" className="rounded-full border-primary/30 text-primary font-bold px-4 flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4" />
+                        Admin Hub
+                      </Button>
+                    </Link>
+                  )}
+                  <Button 
+                    variant="heroOutline" 
+                    size="sm" 
+                    className="rounded-full px-4"
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      window.location.href = "/";
+                    }}
+                  >
+                    Sign Out
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <IdentityRecoveryButton className="max-w-[15rem] lg:max-w-[18rem]" />
+                  <Link to="/chat">
+                    <Button variant="hero" size="default" className="rounded-full px-4 lg:px-5 xl:px-6">
+                      <span className="lg:hidden">Get Support</span>
+                      <span className="hidden lg:inline xl:hidden">Start Chat</span>
+                      <span className="hidden xl:inline">Start a Conversation</span>
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
 
             <button

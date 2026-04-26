@@ -7,7 +7,7 @@ import {
   Users, MessageCircle, Shield, Globe, Clock, Heart,
   Calendar, Phone, AlertTriangle, CheckCircle, ChevronRight, Navigation
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO } from "date-fns";
@@ -49,6 +49,25 @@ interface TimeSlot {
   is_booked: boolean;
 }
 
+interface Booking {
+  id: string;
+  student_alias_id?: string | null;
+  meeting_token: string | null;
+  anonymous_name: string;
+  issue_type: string;
+  status: string;
+  notes: string | null;
+  time_slots: {
+    slot_date: string;
+    start_time: string;
+    end_time: string;
+    volunteers: {
+      id: string;
+      name: string;
+    } | null;
+  } | null;
+}
+
 type VolunteerBriefingAnswers = Record<string, string> & {
   intensity: string;
   need: string;
@@ -60,7 +79,7 @@ type VolunteerBriefingAnswers = Record<string, string> & {
 // ─── MyBookingCard ────────────────────────────────────────────────────────────
 // Reads room credentials from the DB and displays them persistently.
 
-function MyBookingCard({ booking }: { booking: any }) {
+function MyBookingCard({ booking }: { booking: Booking }) {
   const slot = booking.time_slots;
   const volunteer = slot?.volunteers;
 
@@ -228,10 +247,10 @@ function PeerMatchPage() {
   const { aliasId, profileExists, isLoading: identityLoading } = useAnonymousIdentity();
 
   // ── persistent booking state (reads from DB, survives navigation) ──────────
-  const [myBooking, setMyBooking] = useState<any>(null);
+  const [myBooking, setMyBooking] = useState<Booking | null>(null);
   const [bookingLoading, setBookingLoading] = useState(true);
 
-  const fetchMyBooking = async (currentAliasId?: string | null) => {
+  const fetchMyBooking = useCallback(async (currentAliasId?: string | null) => {
     setBookingLoading(true);
 
     const storedBookingId = localStorage.getItem("soulSync_last_booking_id");
@@ -297,17 +316,17 @@ function PeerMatchPage() {
     }
     
     setBookingLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchMyBooking();
-  }, []);
+  }, [fetchMyBooking]);
 
   useEffect(() => {
     if (aliasId) {
       fetchMyBooking(aliasId);
     }
-  }, [aliasId]);
+  }, [aliasId, fetchMyBooking]);
 
   useEffect(() => {
     const fetchHistory = async () => {

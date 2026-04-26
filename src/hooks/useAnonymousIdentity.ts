@@ -13,6 +13,14 @@ export function useAnonymousIdentity() {
 
   useEffect(() => {
     async function initIdentity() {
+      // Check if we already have an authenticated session (e.g. Admin)
+      // If so, we don't need to initialize an anonymous student identity
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setIsLoading(false);
+        return;
+      }
+
       let id = localStorage.getItem(ALIAS_STORAGE_KEY);
 
       if (!id) {
@@ -29,7 +37,6 @@ export function useAnonymousIdentity() {
 
         if (error) {
           console.error("[useAnonymousIdentity] student_profiles upsert error:", error);
-          // DB row failed — store id locally but mark profile as NOT persisted.
           localStorage.setItem(ALIAS_STORAGE_KEY, newId);
           dispatchIdentityChanged();
           id = newId;
@@ -44,7 +51,6 @@ export function useAnonymousIdentity() {
         id = newId;
         setProfileExists(true);
       } else {
-        // id came from localStorage — assume the profile exists in DB
         setProfileExists(true);
       }
 

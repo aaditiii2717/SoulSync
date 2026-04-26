@@ -21,25 +21,37 @@ function AdminLogin() {
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [mode, setMode]         = useState<UIMode>("login");
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
   const [info, setInfo]         = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Detect existing valid session (e.g. page refresh)
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let mounted = true;
+
+    async function checkExistingSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!mounted) return;
+
       if (session?.user?.email && ALLOWED_ADMIN_EMAILS.includes(normalizeEmail(session.user.email))) {
         navigate({ to: "/admin/command-center" });
+      } else {
+        setIsCheckingAuth(false);
       }
-    });
+    }
+
+    checkExistingSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+
       if (event === "PASSWORD_RECOVERY") {
-        // User clicked the reset link in their email — show set-new-password form
         setMode("reset");
         setError("");
         setInfo("Enter your new password below.");
+        setIsCheckingAuth(false);
         return;
       }
 
@@ -50,12 +62,28 @@ function AdminLogin() {
           setError("This account is not authorized for Admin access.");
           supabase.auth.signOut();
           setLoading(false);
+          setIsCheckingAuth(false);
         }
+      }
+      
+      if (event === "SIGNED_OUT") {
+        setIsCheckingAuth(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
+
+  if (isCheckingAuth) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   // ─── Handlers ────────────────────────────────────────────────────────────────
 
