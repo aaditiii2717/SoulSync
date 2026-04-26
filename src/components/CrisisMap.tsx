@@ -45,7 +45,7 @@ export const CrisisMap: React.FC = () => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            const userPos: [number, number] = [position.coords.lat, position.coords.lng];
+            const userPos: [number, number] = [position.coords.latitude, position.coords.longitude];
             map.setView(userPos, 13);
 
             // Add a beautiful pulse marker for user

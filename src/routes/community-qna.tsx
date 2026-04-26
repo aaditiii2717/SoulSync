@@ -134,7 +134,7 @@ function CommunityQnAPage() {
       ));
       
       // Update community_questions responses_count via RPC or direct update
-      await supabase.rpc('increment_response_count', { row_id: questionId });
+      await supabase.rpc('increment_response_count', { question_id: questionId });
     }
     setIsPostingResponse(false);
   };

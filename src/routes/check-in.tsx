@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { MoodSelector, type MoodType } from "@/components/MoodSelector";
-import { MoodChart, moodValues } from "@/components/MoodChart";
+import { MoodChart, moodValues, type ChartDataPoint } from "@/components/MoodChart";
 import { Button } from "@/components/ui/button";
 import { MessageCircleHeart, BookOpen, TrendingUp, Users, Shield, Sparkles, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -25,7 +25,7 @@ const quickActions = [
 function CheckInPage() {
   const { aliasId, isLoading: identityLoading } = useAnonymousIdentity();
   const [selectedMood, setSelectedMood] = useState<MoodType | undefined>();
-  const [moodEntries, setMoodEntries] = useState<any[]>([]);
+  const [moodEntries, setMoodEntries] = useState<ChartDataPoint[]>([]);
   const [loadingChart, setLoadingChart] = useState(true);
 
   const fetchMoodHistory = async () => {
@@ -144,7 +144,7 @@ function CheckInPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
               </div>
             ) : (
-              <MoodChart data={moodEntries.length > 0 ? moodEntries : undefined} />
+              <MoodChart data={moodEntries.length > 0 ? moodEntries : []} />
             )}
           </div>
         </div>

@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      community_questions: {
+        Row: {
+          id: string
+          created_at: string
+          question: string
+          category: string | null
+          relate_count: number | null
+          responses_count: number | null
+          is_public: boolean | null
+          alias_id: string | null
+          answer: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          question: string
+          category?: string | null
+          relate_count?: number | null
+          responses_count?: number | null
+          is_public?: boolean | null
+          alias_id?: string | null
+          answer?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          question?: string
+          category?: string | null
+          relate_count?: number | null
+          responses_count?: number | null
+          is_public?: boolean | null
+          alias_id?: string | null
+          answer?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_questions_alias_id_fkey"
+            columns: ["alias_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["alias_id"]
+          }
+        ]
+      }
+      qna_responses: {
+        Row: {
+          id: string
+          created_at: string
+          question_id: string | null
+          response_text: string
+          alias_id: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          question_id?: string | null
+          response_text: string
+          alias_id?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          question_id?: string | null
+          response_text?: string
+          alias_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qna_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "community_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qna_responses_alias_id_fkey"
+            columns: ["alias_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["alias_id"]
+          }
+        ]
+      }
       donations: {
         Row: {
           amount: number
@@ -143,6 +226,7 @@ export type Database = {
           mood_after: string | null
           mood_before: string | null
           notes: string | null
+          reminder_sent: boolean
           status: string
           student_alias_id: string | null
           time_slot_id: string
@@ -161,6 +245,7 @@ export type Database = {
           mood_after?: string | null
           mood_before?: string | null
           notes?: string | null
+          reminder_sent?: boolean
           status?: string
           student_alias_id?: string | null
           time_slot_id: string
@@ -179,6 +264,7 @@ export type Database = {
           mood_after?: string | null
           mood_before?: string | null
           notes?: string | null
+          reminder_sent?: boolean
           status?: string
           student_alias_id?: string | null
           time_slot_id?: string
@@ -350,7 +436,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_due_session_reminders: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          booking_id: string
+          anonymous_name: string
+          meeting_token: string | null
+          volunteer_email: string
+          volunteer_name: string
+          slot_date: string
+          start_time: string
+        }[]
+      }
+      increment_response_count: {
+        Args: { question_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

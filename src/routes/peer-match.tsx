@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   Users, MessageCircle, Shield, Globe, Clock, Heart,
-  Calendar, Phone, AlertTriangle, CheckCircle, ChevronRight
+  Calendar, Phone, AlertTriangle, CheckCircle, ChevronRight, Navigation
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -501,6 +501,7 @@ function PeerMatchPage() {
 
       const bookingPayload = {
         time_slot_id: selectedSlot.id,
+        volunteer_id: selectedVolunteer.id,
         anonymous_name: anonName.trim() || "Anonymous",
         issue_type: selectedIssue,
         language_preference: selectedLanguage,

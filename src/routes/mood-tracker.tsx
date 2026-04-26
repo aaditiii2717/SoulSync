@@ -74,7 +74,7 @@ function MoodTrackerPage() {
     if (error) {
       console.error("Error fetching moods:", error);
     } else {
-      setEntries(data || []);
+      setEntries((data as unknown as RawMoodEntry[]) || []);
     }
     setLoadingEntries(false);
   };

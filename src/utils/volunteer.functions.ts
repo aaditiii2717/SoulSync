@@ -250,7 +250,7 @@ export const getVolunteerCvAccessUrl = createServerFn({ method: "POST" })
         .eq("id", data.volunteerId)
         .single();
 
-      volunteer = legacyVolunteerQuery.data;
+      volunteer = legacyVolunteerQuery.data ? { ...legacyVolunteerQuery.data, cv_storage_path: null } : null;
       volunteerError = legacyVolunteerQuery.error;
     }
 
