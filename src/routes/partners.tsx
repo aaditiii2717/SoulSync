@@ -34,47 +34,47 @@ interface NGO {
 const defaultNgos: NGO[] = [
   {
     id: "ngo-1",
-    name: "The Banyan",
-    category: "Holistic Care",
-    description: "Providing comprehensive mental health services and housing for marginalized individuals in India since 1993.",
-    logo: "https://imgs.search.brave.com/0nknvQ7dIjHjVCS65zBoEO1EFpI4lsgDr6zgVmBfDLs/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly93d3cu/bWhpbm5vdmF0aW9u/Lm5ldC9zaXRlcy9k/ZWZhdWx0L2ZpbGVz/L3N0eWxlcy9sb2dv/X3hzbWFsbC9wdWJs/aWMvY29udGVudC9v/cmdhbmlzYXRpb24v/bG9nby8yMDIzLTA5/L0NhcHR1cmUyXzAu/cG5nLmpwZWc_aXRv/az1uWjJ6MU9KLQ",
-    email: "contact@thebanyan.org",
-    phone: "+91 9677121099",
-    location: "Chennai, India",
-    website: "https://thebanyan.org"
+    name: "Serene Skies Initiative",
+    category: "Holistic Wellness",
+    description: "Dedicated to providing global reach for anonymous mental wellness through community-driven support and decentralized healing networks.",
+    logo: null,
+    email: "reach@sereneskies.org",
+    phone: "+91 9000000000",
+    location: "Global Support",
+    website: "https://sereneskies.initiative"
   },
   {
     id: "ngo-2",
-    name: "Sangath",
-    category: "Community Intervention",
-    description: "A leading NGO dedicated to making mental health services accessible through community-based interventions.",
-    logo: "https://imgs.search.brave.com/DsxjoZ6sQYZhT0MQUltalzHYCK9yYwdBW7Iu361wGz4/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/bWhpbm5vdmF0aW9u/Lm5ldC9zaXRlcy9k/ZWZhdWx0L2ZpbGVz/L3N0eWxlcy9sb2dv/X3hzbWFsbC9wdWJs/aWMvY29udGVudC9v/cmdhbmlzYXRpb24v/bG9nby8yMDIzLTA5/L1NBTkdBVEglMjBM/T0dPLkpQRy5qcGVn/P2l0b2s9MkxlbTRh/S1E",
-    email: "contactus@sangath.in",
-    phone: "+91 7887872345",
-    location: "Goa, India",
-    website: "https://sangath.in"
+    name: "Mind Harbor Alliance",
+    category: "Community Support",
+    description: "A collaborative effort focused on mental health advocacy and providing a safe harbor for students seeking peer-to-peer connection.",
+    logo: null,
+    email: "hello@mindharbor.net",
+    phone: "+91 8888888888",
+    location: "Virtual Presence",
+    website: "https://mindharbor.alliance"
   },
   {
     id: "ngo-3",
-    name: "Vandrevala Foundation",
-    category: "Crisis Support",
-    description: "Offering 24/7 free emotional support and crisis intervention across India via their multi-lingual helplines.",
-    logo: "https://imgs.search.brave.com/bFY7W2lw1YvSr4AY7pEjIfP2prdC_K2Kp0VQJTozHa8/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly90aGVt/aW5kY2xhbi5jb20v/aW1hZ2VzL2hlbHBs/aW5lcy92Zi1sb2dv/LTEud2VicA",
-    email: "help@vandrevalafoundation.com",
-    phone: "Available 24/7",
-    location: "Nationwide Support",
-    website: "https://www.vandrevalafoundation.com"
+    name: "Inner Harmony Network",
+    category: "Crisis Resilience",
+    description: "Empowering individuals to build emotional resilience through anonymous counseling and structured support systems.",
+    logo: null,
+    email: "support@innerharmony.io",
+    phone: "24/7 Virtual Help",
+    location: "Online Network",
+    website: "https://innerharmony.network"
   },
   {
     id: "ngo-4",
-    name: "Aasra",
-    category: "Crisis Intervention",
-    description: "A crisis intervention centre for the lonely, distressed and suicidal. We provide confidential care and support to those with suicidal ideation.",
-    logo: "https://imgs.search.brave.com/MIgqWccZrENoCrxXLOhGbeugMiAIyI66WKEw7tWH8fM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/YWFzcmEuaW5mby9p/bWFnZXMvbG9nby5q/cGc",
-    email: "aasrahelp@yahoo.com",
-    phone: "+91-9820466726",
-    location: "Mumbai, India",
-    website: "https://www.aasra.info"
+    name: "Resilient Spirits Collective",
+    category: "Peer Advocacy",
+    description: "A non-profit collective bridging the gap between student needs and anonymous professional guidance in a secure environment.",
+    logo: null,
+    email: "connect@resilientspirits.org",
+    phone: "+91 7777777777",
+    location: "Decentralized Care",
+    website: "https://resilientspirits.collective"
   }
 ];
 
@@ -88,21 +88,11 @@ function PartnersPage() {
     async function fetchNgos() {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("ngos")
-          .select("*")
-          .eq("is_verified", true);
-        
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          setNgos(data);
-        } else {
-          setNgos(defaultNgos); // Fallback to demo data
-        }
+        // We are using fictional data for all partners to ensure platform anonymity
+        setNgos(defaultNgos);
       } catch (err) {
         console.error("Fetch NGOS error:", err);
-        setNgos(defaultNgos); // Graceful fallback
+        setNgos(defaultNgos);
       } finally {
         setLoading(false);
       }
@@ -131,10 +121,10 @@ function PartnersPage() {
                 Social Impact
               </div>
               <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-black mb-6 tracking-tight text-slate-900">
-                Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-600">NGO Partners</span>
+                Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-600">Impact Network</span>
               </h1>
               <p className="text-slate-600 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
-                SoulSync partners with India's leading mental health organizations to provide professional escalation and long-term care for students.
+                SoulSync collaborates with anonymous impact organizations to provide a safety net for students worldwide while maintaining total privacy.
               </p>
             </motion.div>
           </div>
