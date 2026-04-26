@@ -142,7 +142,7 @@ function VolunteerDashboard() {
     try {
       const { data, error } = await supabase
         .from("session_bookings")
-        .select(`*, student_profiles(anonymous_username), time_slots(*)`)
+        .select(`*, student_profiles(anonymous_username, memory_context), time_slots(*)`)
         .eq("volunteer_id", volunteerId)
         .neq("status", "cancelled")
         .order("created_at", { ascending: false });
@@ -806,9 +806,15 @@ function VolunteerDashboard() {
                </div>
                
                <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 bg-slate-50">
+                 {selectedSession.student_profiles?.memory_context && (
+                   <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 shadow-sm">
+                     <h4 className="text-xs font-black uppercase tracking-widest text-emerald-600 mb-3 flex items-center gap-2"><MessageSquare className="h-4 w-4" /> Patient Historical Context</h4>
+                     <p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedSession.student_profiles.memory_context}</p>
+                   </div>
+                 )}
                  {selectedSession.handoff_briefing && (
                    <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 shadow-sm">
-                     <h4 className="text-xs font-black uppercase tracking-widest text-primary mb-3 flex items-center gap-2"><MessageSquare className="h-4 w-4" /> AI Handoff Briefing</h4>
+                     <h4 className="text-xs font-black uppercase tracking-widest text-primary mb-3 flex items-center gap-2"><MessageSquare className="h-4 w-4" /> AI Handoff Briefing (Current Session)</h4>
                      <p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedSession.handoff_briefing}</p>
                    </div>
                  )}
