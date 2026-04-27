@@ -186,7 +186,8 @@ export const ensureAdminVolunteerProfile = createServerFn({ method: "POST" })
       .single();
 
     if (error) {
-      throw new Error("Failed to provision the admin profile.");
+      console.error("Admin provisioning DB error:", error);
+      throw new Error(`Platform profile sync failed: ${error.message}`);
     }
 
     return data;
