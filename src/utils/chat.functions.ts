@@ -155,7 +155,10 @@ export const sendChatMessage = createServerFn({ method: "POST" })
     );
 
     if (!response.ok) {
-      return { content: "I'm having a bit of trouble connecting. Try again? 💛", error: true };
+      if (response.status === 503 || response.status === 429) {
+        return { content: "Our AI servers are currently experiencing a heavy load. Please try your message again in a few moments. 💛", error: true };
+      }
+      return { content: `Our AI servers encountered an issue (${response.statusText}). Please try again shortly. 💛`, error: true };
     }
 
     const result = (await response.json()) as GeminiGenerateContentResponse;
