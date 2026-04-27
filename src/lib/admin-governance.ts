@@ -1,6 +1,6 @@
 export const ALLOWED_ADMIN_EMAILS = [
   "varadprabhu2442@gmail.com",
-  "aniket.aniket07sah@gmail.com",
+  "aniket.aniket07ion@gmail.com",
   "aaditishrivastava17@gmail.com",
 ];
 
