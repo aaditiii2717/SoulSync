@@ -13,10 +13,9 @@ import {
   X,
   ShieldCheck
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, memo } from "react";
 import { ALLOWED_ADMIN_EMAILS, normalizeEmail } from "@/lib/admin-governance";
 
-import { IdentityRecoveryButton } from "@/components/IdentityRecoveryButton";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
@@ -31,22 +30,34 @@ const exploreLinks = [
   { to: "/resources", label: "Self-Help Library", desc: "Guides and coping tools", icon: BookOpen },
 ] as const;
 
-export function Navbar() {
+export const Navbar = memo(() => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isVolunteer, setIsVolunteer] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const updateAuthStatus = (session: Session | null) => {
+    const updateAuthStatus = async (session: Session | null) => {
       const email = session?.user?.email || null;
       setUserEmail(email);
+      
       if (email) {
         setIsAdmin(ALLOWED_ADMIN_EMAILS.includes(normalizeEmail(email)));
+        
+        // Check if user is a verified volunteer
+        const { data: volunteerData } = await supabase
+          .from("volunteers")
+          .select("id, verification_status")
+          .eq("email", email)
+          .single();
+          
+        setIsVolunteer(volunteerData?.verification_status === "verified");
       } else {
         setIsAdmin(false);
+        setIsVolunteer(false);
       }
     };
 
@@ -123,7 +134,7 @@ export function Navbar() {
                 </button>
 
                 {dropdownOpen && (
-                  <div className="absolute left-0 top-full mt-3 w-80 rounded-[1.5rem] border border-white/85 bg-white/95 p-2 shadow-[0_28px_70px_-38px_oklch(0.35_0.08_145_/_0.42)] backdrop-blur-xl">
+                  <div className="absolute left-0 top-full mt-3 w-80 rounded-[1.5rem] border border-slate-200 bg-white p-2 shadow-xl">
                     {exploreLinks.map((link) => (
                       <Link
                         key={link.to}
@@ -178,6 +189,14 @@ export function Navbar() {
                       </Button>
                     </Link>
                   )}
+                  {isVolunteer && !isAdmin && (
+                    <Link to="/volunteer/dashboard">
+                      <Button variant="outline" size="sm" className="rounded-full border-rose-500/30 text-rose-600 font-bold px-4 flex items-center gap-2 hover:bg-rose-50">
+                        <HeartHandshake className="h-4 w-4" />
+                        Volunteer Hub
+                      </Button>
+                    </Link>
+                  )}
                   <Button 
                     variant="heroOutline" 
                     size="sm" 
@@ -192,7 +211,6 @@ export function Navbar() {
                 </div>
               ) : (
                 <>
-                  <IdentityRecoveryButton className="max-w-[15rem] lg:max-w-[18rem]" />
                   <Link to="/chat">
                     <Button variant="hero" size="default" className="rounded-full px-4 lg:px-5 xl:px-6">
                       <span className="lg:hidden">Get Support</span>
@@ -275,10 +293,6 @@ export function Navbar() {
               </div>
             </Link>
 
-            <div className="mt-4" onClick={() => setMobileOpen(false)}>
-              <IdentityRecoveryButton className="h-auto w-full justify-start rounded-2xl px-4 py-3 text-left shadow-none" />
-            </div>
-
             <Link to="/chat" onClick={() => setMobileOpen(false)}>
               <Button variant="hero" className="mt-4 h-12 w-full rounded-full">
                 Get Support
@@ -289,4 +303,6 @@ export function Navbar() {
       </div>
     </nav>
   );
-}
+});
+
+Navbar.displayName = "Navbar";

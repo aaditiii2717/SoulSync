@@ -148,7 +148,7 @@ function CommunityQnAPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-4">
             <HelpCircle className="h-4 w-4" />
-            Collective Resillience
+            Collective Resilience
           </div>
           <h1 className="font-display text-4xl sm:text-5xl font-black tracking-tight">
             Common <span className="text-gradient">Humanity</span>

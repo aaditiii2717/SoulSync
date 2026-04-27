@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Play, MessageCircleHeart, Users, Star, Quote } from "lucide-react";
+import { Play, Users, Star } from "lucide-react";
 import { Card } from "./ui/card";
 import { TestimonialVideoModal, Story } from "./TestimonialVideoModal";
 
@@ -123,19 +123,6 @@ export function CommunityStories() {
               </Card>
             </motion.div>
           ))}
-        </div>
-
-        <div className="mt-16 flex justify-center">
-          <div className="inline-flex items-center gap-4 rounded-3xl bg-slate-100/50 px-8 py-5 ring-1 ring-slate-100">
-            <div className="flex -space-x-4">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="h-10 w-10 rounded-full border-2 border-white bg-slate-200" />
-              ))}
-            </div>
-            <p className="text-sm font-medium text-slate-600">
-              Join <span className="font-bold text-slate-900">30+ students</span> who started their healing journey here.
-            </p>
-          </div>
         </div>
       </div>
 

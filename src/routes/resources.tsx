@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ResourceCard } from "@/components/ResourceCard";
-import { BookOpen, Heart, Brain, Shield, Sun, Users, Phone, Lightbulb, X, Wind, Sparkles, Map, Activity, PenLine } from "lucide-react";
+import { BookOpen, Heart, Brain, Shield, Sun, Users, Phone, Lightbulb, X, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -272,3 +272,5 @@ function ResourcesPage() {
     </div>
   );
 }
+
+export default ResourcesPage;

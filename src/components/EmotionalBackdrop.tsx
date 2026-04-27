@@ -69,7 +69,7 @@ export function EmotionalBackdrop() {
           animate={{ y: [0, -18, 0], rotateZ: [-1, 1, -1] }}
           transition={{ repeat: Infinity, duration: panel.duration, ease: "easeInOut" }}
         >
-          <div className="scene-panel w-64 rounded-[1.6rem] p-4 opacity-40 shadow-sm transition-opacity hover:opacity-100" style={{ transform: panel.transform }}>
+          <div className="glass-card w-64 rounded-[1.6rem] p-4 opacity-40 shadow-sm transition-opacity hover:opacity-100" style={{ transform: panel.transform }}>
             <p className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-primary/40">
               {panel.eyebrow}
             </p>
@@ -81,9 +81,9 @@ export function EmotionalBackdrop() {
         </motion.div>
       ))}
 
-      {lightDots.map((dot) => (
+      {lightDots.map((dot, i) => (
         <motion.span
-          key={dot.className}
+          key={i}
           className={`absolute rounded-full blur-sm ${dot.className}`}
           animate={{ y: [0, -20, 0], opacity: [0.3, 0.95, 0.3], scale: [0.9, 1.2, 0.9] }}
           transition={{ repeat: Infinity, duration: dot.duration, ease: "easeInOut" }}

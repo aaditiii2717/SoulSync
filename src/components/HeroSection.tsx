@@ -93,7 +93,7 @@ export function HeroSection() {
               transition={{ repeat: Infinity, duration: 6.5, ease: "easeInOut" }}
             >
               <div
-                className="scene-panel preserve-3d rounded-[2rem] p-6 sm:p-8"
+                className="glass-card rounded-[2rem] p-6 sm:p-8"
                 style={{ transform: "rotateY(-12deg) rotateX(8deg)" }}
               >
                 <div className="flex items-start justify-between gap-4">
@@ -142,7 +142,7 @@ export function HeroSection() {
               transition={{ repeat: Infinity, duration: 5.8, ease: "easeInOut" }}
             >
               <div
-                className="scene-panel w-56 rounded-[1.5rem] p-4"
+                className="glass-card w-56 rounded-[1.5rem] p-4"
                 style={{ transform: "rotateY(22deg) rotateX(-10deg) translateZ(40px)" }}
               >
                 <div className="flex items-center gap-3">
@@ -166,7 +166,7 @@ export function HeroSection() {
               transition={{ repeat: Infinity, duration: 7.2, ease: "easeInOut" }}
             >
               <div
-                className="scene-panel w-60 rounded-[1.5rem] p-4"
+                className="glass-card w-60 rounded-[1.5rem] p-4"
                 style={{ transform: "rotateY(-24deg) rotateX(10deg) translateZ(52px)" }}
               >
                 <div className="flex items-center gap-3">

@@ -5,67 +5,51 @@ const footerLinks = {
   "Get Help": [
     { to: "/chat", label: "Talk to Someone" },
     { to: "/peer-match", label: "Peer Support" },
-    { to: "/community-qna", label: "Community Q&A" },
-    { to: "/resources", label: "Self-Help Library" },
+    { to: "/resources", label: "Resources" },
   ],
-  "Your Journey": [
-    { to: "/check-in", label: "My Check-In" },
-    { to: "/mood-tracker", label: "Mood Journal" },
-    { to: "/volunteer", label: "Become a Volunteer" },
+  Platform: [
+    { to: "/check-in", label: "Check-in" },
     { to: "/admin", label: "Admin Portal" },
+    { to: "/volunteer", label: "Volunteer Portal" },
   ],
-  "Crisis Support": [
-    { href: "tel:988", label: "988 Lifeline (Call/Text)" },
-    { href: "sms:741741&body=HOME", label: "Crisis Text: HOME to 741741" },
-    { href: "https://www.nami.org", label: "NAMI Resources" },
+  Company: [
+    { to: "/", label: "About SoulSync" },
+    { to: "/", label: "Social Impact" },
+    { to: "/", label: "Privacy Policy" },
   ],
-} as const;
+};
 
 export function Footer() {
   return (
-    <footer className="border-t border-white/45 bg-white/45 backdrop-blur-xl">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <Link to="/" className="mb-4 inline-flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl gradient-wellness shadow-sm">
-                <HeartHandshake className="h-5 w-5 text-primary-foreground" />
+    <footer className="relative border-t border-slate-100 bg-white/50 backdrop-blur-xl px-4 py-20 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="grid grid-cols-2 gap-12 lg:grid-cols-4 lg:gap-8">
+          <div className="col-span-2 lg:col-span-1">
+            <Link to="/" className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl gradient-wellness shadow-lg shadow-primary/20">
+                <HeartHandshake className="h-6 w-6 text-white" />
               </div>
-              <span className="font-display text-xl font-bold text-gradient">SoulSync</span>
+              <span className="font-display text-2xl font-semibold tracking-tight">SoulSync</span>
             </Link>
-            <p className="text-sm leading-7 text-muted-foreground">
-              A softer digital space for emotional support, pairing warm AI guidance with peer listeners and real safety
-              cues.
-            </p>
-            <p className="mt-3 text-xs italic leading-6 text-muted-foreground">
-              SoulSync is not a replacement for professional therapy. It is a bridge that helps people reach the kind of
-              support they need.
+            <p className="mt-6 max-w-xs text-sm leading-7 text-muted-foreground font-medium">
+              A student-led movement for emotional resilience and anonymous peer support.
             </p>
           </div>
 
           {Object.entries(footerLinks).map(([title, links]) => (
             <div key={title}>
-              <h4 className="mb-3 font-display text-sm font-semibold">{title}</h4>
-              <ul className="space-y-2">
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                {title}
+              </h3>
+              <ul className="mt-6 space-y-4">
                 {links.map((link) => (
                   <li key={link.label}>
-                    {"to" in link ? (
-                      <Link
-                        to={link.to}
-                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        {link.label}
-                      </Link>
-                    ) : (
-                      <a
-                        href={link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        {link.label}
-                      </a>
-                    )}
+                    <Link
+                      to={link.to}
+                      className="text-sm font-semibold text-slate-600 transition-colors hover:text-primary"
+                    >
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -73,9 +57,14 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-10 border-t pt-6 text-center text-xs text-muted-foreground">
-          <p>Built with care by Code Catalysts · HM49</p>
-          <p className="mt-1">&copy; {new Date().getFullYear()} SoulSync. All rights reserved.</p>
+        <div className="mt-20 flex flex-col items-center justify-between gap-6 border-t border-slate-50 pt-10 sm:flex-row">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+            © 2026 SoulSync. For Google Solution Challenge.
+          </p>
+          <div className="flex items-center gap-2">
+             <div className="h-2 w-2 rounded-full bg-safe animate-pulse" />
+             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Secure & Anonymous Connection</span>
+          </div>
         </div>
       </div>
     </footer>

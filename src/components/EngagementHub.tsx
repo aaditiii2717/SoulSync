@@ -44,7 +44,7 @@ export function EngagementHub() {
             </motion.div>
           </div>
 
-          <AnimatePresence>
+          <AnimatePresence mode="wait">
             <TabsContent value="stories" key="stories" className="focus-visible:ring-0">
               <motion.div
                 initial={{ opacity: 0, y: 30 }}

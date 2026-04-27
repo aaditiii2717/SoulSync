@@ -29,7 +29,7 @@ const steps = [
 
 export function WorkflowSection() {
   return (
-    <section className="relative px-4 py-24 sm:px-6 lg:px-8">
+    <section className="relative px-4 py-24 sm:px-6 lg:px-8 bg-white/30 backdrop-blur-sm">
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-primary/70">
@@ -44,7 +44,7 @@ export function WorkflowSection() {
         </div>
 
         <div className="relative mt-16 space-y-6">
-          <div className="absolute left-6 top-6 hidden h-[calc(100%-3rem)] w-px soft-divider md:block" />
+          <div className="absolute left-6 top-6 hidden h-[calc(100%-3rem)] w-px bg-slate-100 md:block" />
 
           {steps.map((step, index) => (
             <motion.div
@@ -53,11 +53,11 @@ export function WorkflowSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.08, duration: 0.45 }}
-              className="story-card relative rounded-[2rem] p-6 sm:p-7"
+              className="relative rounded-[2rem] p-6 sm:p-10 border border-slate-50 bg-white shadow-sm hover:shadow-xl transition-all group"
             >
               <div className="grid gap-6 md:grid-cols-[5rem_1fr_17rem] md:items-center">
                 <div className="flex items-center gap-4 md:flex-col md:items-center md:gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl gradient-wellness text-sm font-semibold text-primary-foreground shadow-sm">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl gradient-wellness text-sm font-semibold text-white shadow-lg shadow-primary/20">
                     {step.step}
                   </div>
                   <div className="text-xs font-semibold uppercase tracking-[0.24em] text-primary/70">
@@ -72,8 +72,8 @@ export function WorkflowSection() {
                   <p className="mt-3 text-sm leading-7 text-muted-foreground sm:text-base">{step.desc}</p>
                 </div>
 
-                <div className="rounded-[1.5rem] bg-white/65 px-4 py-4 text-sm leading-7 text-foreground/85 shadow-sm">
-                  {step.note}
+                <div className="rounded-[1.5rem] bg-slate-50 px-6 py-5 text-xs font-bold uppercase tracking-widest text-slate-400 border border-slate-100">
+                  <span className="text-primary mr-2">Phase:</span> {step.note}
                 </div>
               </div>
             </motion.div>
