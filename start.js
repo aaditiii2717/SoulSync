@@ -62,6 +62,7 @@ const handler = async (req, res) => {
       method: req.method,
       headers: req.headers,
       body: ["GET", "HEAD"].includes(req.method) ? undefined : Readable.toWeb(req),
+      duplex: "half",
     });
 
     const response = await server.fetch(request);
