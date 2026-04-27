@@ -283,7 +283,9 @@ function AdminVolunteersPage() {
                         </div>
                         <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-50 border border-slate-100">
                            <Zap className="h-3 w-3 text-amber-500" />
-                           <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Vetting Score: 92%</span>
+                           <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">
+                             {vol.verification_status === "verified" ? "Audit Passed: 100%" : "Audit Pending"}
+                           </span>
                         </div>
                       </div>
 

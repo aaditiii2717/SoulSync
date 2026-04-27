@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { 
   X, Info, MessageSquare, Zap, CheckCircle, RefreshCw,
-  TrendingUp, Activity, User
+  TrendingUp, Activity, User, Video
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -62,9 +62,25 @@ export const SessionWorkspace = memo(({
                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Session ID: {selectedSession.id.slice(0, 12)}</p>
               </div>
            </div>
-           <button onClick={onClose} className="h-12 w-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all shadow-sm">
-              <X className="h-5 w-5" />
-           </button>
+           <div className="flex items-center gap-3">
+              <Button 
+                asChild
+                className="h-12 px-6 rounded-2xl bg-emerald-500 text-white font-black text-xs shadow-lg shadow-emerald-500/10 hover:bg-emerald-600 transition-all"
+              >
+                <a 
+                  href={`https://meet.jit.si/SoulSync-Session-${selectedSession.id}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2"
+                >
+                  <Video className="h-4 w-4" />
+                  Join Video Session
+                </a>
+              </Button>
+              <button onClick={onClose} className="h-12 w-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all shadow-sm">
+                 <X className="h-5 w-5" />
+              </button>
+           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-8 lg:p-12">

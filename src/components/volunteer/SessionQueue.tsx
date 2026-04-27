@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { 
   MessageSquare, LayoutDashboard, Clock, Calendar, 
-  ChevronRight, FileText, UserCheck, AlertTriangle
+  ChevronRight, FileText, UserCheck, AlertTriangle,
+  Video
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -89,13 +90,29 @@ export const SessionQueue = memo(({
                  </p>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                  <Button 
                    onClick={() => onSelectSession(session)}
                    className="flex-1 h-12 rounded-xl bg-slate-900 text-white font-bold text-xs"
                  >
                     Enter Workspace
                  </Button>
+                 {status === 'active' && (
+                   <Button 
+                     asChild
+                     className="flex-1 h-12 rounded-xl bg-primary text-white font-bold text-xs shadow-lg shadow-primary/20"
+                   >
+                     <a 
+                       href={`https://meet.jit.si/SoulSync-Session-${session.id}`} 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       className="flex items-center justify-center gap-2"
+                     >
+                       <Video className="h-4 w-4" />
+                       Join Meeting
+                     </a>
+                   </Button>
+                 )}
                  {session.issue_type === 'Crisis' && (
                    <div className="h-12 w-12 rounded-xl bg-red-50 flex items-center justify-center border border-red-100 text-red-500 shadow-lg shadow-red-500/10">
                       <AlertTriangle className="h-5 w-5" />

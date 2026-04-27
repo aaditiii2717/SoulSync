@@ -47,7 +47,8 @@ export function VolunteerNavbar() {
                 to={link.to}
                 search={link.search}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                  location.pathname === link.to
+                  location.pathname === link.to && 
+                  (!link.search || (location.search as any).tab === link.search.tab)
                     ? "bg-primary text-white shadow-lg"
                     : "text-slate-400 hover:text-primary hover:bg-slate-50"
                 }`}
