@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Heart, MessageCircleHeart, Shield, Sparkles, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { IdentityRecoveryButton } from "@/components/IdentityRecoveryButton";
 
 const supportSignals = [
   { icon: Shield, label: "Private by design" },
@@ -48,6 +49,10 @@ export function HeroSection() {
                 Check In With Myself
               </Button>
             </Link>
+          </div>
+
+          <div className="mt-4 sm:mt-5 px-2">
+            <IdentityRecoveryButton variant="muted-link" forceView="recover" />
           </div>
 
           <div className="mt-10 grid gap-3 sm:grid-cols-3">

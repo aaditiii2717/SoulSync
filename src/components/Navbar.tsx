@@ -17,6 +17,7 @@ import { useEffect, useRef, useState, memo } from "react";
 import { ALLOWED_ADMIN_EMAILS, normalizeEmail } from "@/lib/admin-governance";
 
 import { Button } from "@/components/ui/button";
+import { IdentityRecoveryButton } from "@/components/IdentityRecoveryButton";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 
@@ -38,6 +39,8 @@ export const Navbar = memo(() => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isVolunteer, setIsVolunteer] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const isAuthRoute = location.pathname.startsWith("/admin") || location.pathname.startsWith("/volunteer");
 
   useEffect(() => {
     const updateAuthStatus = async (session: Session | null) => {
@@ -190,7 +193,7 @@ export const Navbar = memo(() => {
                     </Link>
                   )}
                   {isVolunteer && !isAdmin && (
-                    <Link to="/volunteer/dashboard">
+                    <Link to="/volunteer/dashboard" search={{ tab: "overview" }}>
                       <Button variant="outline" size="sm" className="rounded-full border-rose-500/30 text-rose-600 font-bold px-4 flex items-center gap-2 hover:bg-rose-50">
                         <HeartHandshake className="h-4 w-4" />
                         Volunteer Hub
@@ -211,6 +214,7 @@ export const Navbar = memo(() => {
                 </div>
               ) : (
                 <>
+                  {!isAuthRoute && <IdentityRecoveryButton className="hidden md:inline-flex" />}
                   <Link to="/chat">
                     <Button variant="hero" size="default" className="rounded-full px-4 lg:px-5 xl:px-6">
                       <span className="lg:hidden">Get Support</span>
@@ -298,6 +302,12 @@ export const Navbar = memo(() => {
                 Get Support
               </Button>
             </Link>
+
+            {!userEmail && !isAuthRoute && (
+              <div className="mt-4 flex justify-center">
+                <IdentityRecoveryButton />
+              </div>
+            )}
           </div>
         )}
       </div>
