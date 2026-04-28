@@ -80,6 +80,13 @@ const handler = async (req, res) => {
   }
 };
 
-createServer(handler).listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-});
+export default handler;
+
+import { fileURLToPath } from 'node:url';
+
+const isMain = process.argv[1] === fileURLToPath(import.meta.url);
+if (isMain) {
+  createServer(handler).listen(port, () => {
+    console.log(`Server listening on port ${port}`);
+  });
+}
