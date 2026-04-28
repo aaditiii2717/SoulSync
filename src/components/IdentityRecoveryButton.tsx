@@ -183,7 +183,7 @@ export function IdentityRecoveryButton({ className, variant = "default", forceVi
 
   const buttonLabel = profileUsername
     ? `Hello, ${profileUsername} 👋`
-    : "Protect My Journey ";
+    : "Protect My Journey ⚠️";
   const isButtonLoading = !aliasId || profileLoading;
   const maskedStoredRecoveryKey = storedRecoveryKey
     ? "•".repeat(Math.max(12, storedRecoveryKey.length))
