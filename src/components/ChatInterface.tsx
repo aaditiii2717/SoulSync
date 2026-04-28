@@ -115,7 +115,10 @@ export function ChatInterface() {
     }
   };
 
-  const generateReportAndRedirect = () => {
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  const generateReportAndRedirect = async () => {
+    setIsRedirecting(true);
     // Generate top emotions
     const sortedEmotions = Object.entries(sessionEmotions)
       .sort(([, a], [, b]) => b - a)
@@ -132,12 +135,16 @@ export function ChatInterface() {
     // Save chat history to AI memory
     const aliasId = localStorage.getItem("soulSync_alias_id");
     if (aliasId) {
-       updateChatMemory({ 
-         data: { 
-           aliasId, 
-           chatHistory: messages.map(m => `${m.role}: ${m.content}`).join("\n") 
-         } 
-       }).catch(console.error);
+       try {
+         await updateChatMemory({ 
+           data: { 
+             aliasId, 
+             chatHistory: messages.map(m => `${m.role}: ${m.content}`).join("\n") 
+           } 
+         });
+       } catch (err) {
+         console.error("Failed to update chat memory", err);
+       }
     }
 
     // Store in sessionStorage for peer-match page
@@ -169,9 +176,19 @@ export function ChatInterface() {
               size="sm" 
               className="rounded-xl hidden sm:flex gap-2 border-primary/20 hover:bg-primary/5"
               onClick={generateReportAndRedirect}
+              disabled={isRedirecting}
             >
-              <MessageSquareHeart className="h-4 w-4 text-primary" />
-              <span className="text-xs font-semibold">Talk to Volunteer</span>
+              {isRedirecting ? (
+                <>
+                  <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                  <span className="text-xs font-semibold">Saving Memory...</span>
+                </>
+              ) : (
+                <>
+                  <MessageSquareHeart className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-semibold">Talk to Volunteer</span>
+                </>
+              )}
             </Button>
           )}
           <div className="flex items-center gap-1.5 rounded-full bg-safe/10 px-3 py-1 border border-safe/20">
@@ -440,9 +457,19 @@ export function ChatInterface() {
                size="sm" 
                className="rounded-xl flex gap-2 border-primary/20 w-full"
                onClick={generateReportAndRedirect}
+               disabled={isRedirecting}
              >
-               <MessageSquareHeart className="h-4 w-4 text-primary" />
-               <span className="text-xs font-semibold">End Chat & Contact Volunteer</span>
+               {isRedirecting ? (
+                 <>
+                   <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                   <span className="text-xs font-semibold">Saving Memory...</span>
+                 </>
+               ) : (
+                 <>
+                   <MessageSquareHeart className="h-4 w-4 text-primary" />
+                   <span className="text-xs font-semibold">End Chat & Contact Volunteer</span>
+                 </>
+               )}
              </Button>
           </div>
         )}
