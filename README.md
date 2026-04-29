@@ -23,7 +23,7 @@ Our platform goes beyond static content with a modular suite of interactive tool
 
 ## 🏗️ Technical Architecture
 ### AI & ML Intelligence
-- **Google Gemini 1.5 Flash**: Orchestrates compassionate dialogue and generates **Intelligent Handoff Briefings** for volunteers.
+- **Google Gemini 2.5 Flash**: Orchestrates compassionate dialogue and generates **Intelligent Handoff Briefings** for volunteers.
 - **Perspective API**: A real-time safety layer ensuring all communications remain respectful and secure.
 
 ### High-Fidelity Frontend
