@@ -167,14 +167,6 @@ Follow these steps to run SoulSync locally:
     bun run dev
     ```
 
-## What's Next
-*   **Multilingual Support:** Expanding the platform to support regional Indian languages using Google Cloud Translation API.
-*   **Crisis Escalation Pipeline:** Direct API integrations with national suicide prevention lifelines for seamless emergency routing.
-*   **Wearable Integration:** Syncing physiological data (e.g., heart rate variability) to preemptively suggest resilience tools.
-
-## Team
-*   **Aadit** - Full Stack Developer & UI/UX Designer
-*   *(Add other team members here)*
 
 <div align="center">
   <b>Built with for student resilience. Because no student should have to navigate their hardest days alone.</b>
