@@ -44,6 +44,8 @@ type IdentityView = "setup" | "recover" | "card";
 
 interface IdentityRecoveryButtonProps {
   className?: string;
+  variant?: "default" | "muted-link";
+  forceView?: IdentityView;
 }
 
 interface StudentIdentityProfile {
@@ -53,7 +55,7 @@ interface StudentIdentityProfile {
   username: string | null;
 }
 
-export function IdentityRecoveryButton({ className }: IdentityRecoveryButtonProps) {
+export function IdentityRecoveryButton({ className, variant = "default", forceView }: IdentityRecoveryButtonProps) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<IdentityView>("setup");
   const [setupStep, setSetupStep] = useState<1 | 2>(1);
@@ -181,7 +183,7 @@ export function IdentityRecoveryButton({ className }: IdentityRecoveryButtonProp
 
   const buttonLabel = profileUsername
     ? `Hello, ${profileUsername} 👋`
-    : "⚠️ Login / Secure Account";
+    : "Protect My Journey ⚠️";
   const isButtonLoading = !aliasId || profileLoading;
   const maskedStoredRecoveryKey = storedRecoveryKey
     ? "•".repeat(Math.max(12, storedRecoveryKey.length))
@@ -192,7 +194,7 @@ export function IdentityRecoveryButton({ className }: IdentityRecoveryButtonProp
 
     if (!nextOpen) return;
 
-    setView(profileUsername ? "card" : "setup");
+    setView(forceView || (profileUsername ? "card" : "setup"));
     setSetupStep(1);
     setUsernameSuggestions(generateUsernameSuggestions());
     setUsernameInput(profileUsername ?? "");
@@ -386,26 +388,39 @@ export function IdentityRecoveryButton({ className }: IdentityRecoveryButtonProp
 
   return (
     <>
-      <Button
-        type="button"
-        variant={profileUsername ? "outline" : "heroOutline"}
-        className={cn(
-          "min-w-0 rounded-full border-white/55 bg-white/75 px-4 py-2 text-left shadow-sm hover:bg-white",
-          !profileUsername && "text-foreground",
-          className,
-        )}
-        onClick={() => handleDialogOpen(true)}
-        disabled={isButtonLoading}
-      >
-        {isButtonLoading ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Preparing your safe ID...
-          </>
-        ) : (
-          <span className="truncate">{buttonLabel}</span>
-        )}
-      </Button>
+      {variant === "muted-link" ? (
+        <button
+          type="button"
+          className={cn(
+            "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:underline",
+            className
+          )}
+          onClick={() => handleDialogOpen(true)}
+        >
+          Returning user? Restore your identity &rarr;
+        </button>
+      ) : (
+        <Button
+          type="button"
+          variant={profileUsername ? "outline" : "heroOutline"}
+          className={cn(
+            "min-w-0 rounded-full border-white/55 px-4 py-2 text-left shadow-sm hover:bg-white",
+            profileUsername ? "bg-white/75" : "bg-amber-50 text-amber-700 border-amber-200/50 hover:bg-amber-100",
+            className,
+          )}
+          onClick={() => handleDialogOpen(true)}
+          disabled={isButtonLoading}
+        >
+          {isButtonLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Preparing your safe ID...
+            </>
+          ) : (
+            <span className="truncate">{buttonLabel}</span>
+          )}
+        </Button>
+      )}
 
       <Dialog open={open} onOpenChange={handleDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto rounded-[2rem] border-white/70 bg-background/95 p-0 sm:max-w-2xl">

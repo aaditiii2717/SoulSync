@@ -3,11 +3,16 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "packageManager": "npm@10",
+  "engines": {
+    "node": "^18.0.0 || ^20.0.0"
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
+    "start": "node start.js",
     "lint": "eslint ."
   },
   "dependencies": {

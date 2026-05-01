@@ -181,8 +181,10 @@ function VolunteerDashboard() {
       if (error) throw error;
       if (data && data.volunteer_notes) {
         setCrmNotes([{ id: "1", content: data.volunteer_notes, created_at: new Date().toISOString() }]);
+        setNewNote(data.volunteer_notes);
       } else {
         setCrmNotes([]);
+        setNewNote("");
       }
     } catch (err) {
       console.error("Error fetching notes:", err);
@@ -202,7 +204,6 @@ function VolunteerDashboard() {
         
       if (error) throw error;
       
-      setNewNote("");
       await fetchNotes(selectedSession.id);
       toast.success("Note saved successfully.");
     } catch (err) {

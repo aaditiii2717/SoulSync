@@ -155,7 +155,10 @@ export const sendChatMessage = createServerFn({ method: "POST" })
     );
 
     if (!response.ok) {
-      return { content: "I'm having a bit of trouble connecting. Try again? 💛", error: true };
+      if (response.status === 503 || response.status === 429) {
+        return { content: "Our AI servers are currently experiencing a heavy load. Please try your message again in a few moments. 💛", error: true };
+      }
+      return { content: `Our AI servers encountered an issue (${response.statusText}). Please try again shortly. 💛`, error: true };
     }
 
     const result = (await response.json()) as GeminiGenerateContentResponse;
@@ -170,8 +173,23 @@ export const updateChatMemory = createServerFn({ method: "POST" })
     const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY ?? process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
     if (!geminiApiKey) return { success: false };
 
-    // Summarize the chat into new memory points
-    const prompt = `Based on this chat history, extract key personal details about the user to remember for next time (e.g., upcoming events, hobbies, current problems, preferences). Keep it as a concise list of bullet points.\n\nChat History:\n${data.chatHistory}`;
+    // Fetch existing memory to prevent overwriting
+    const { data: profile } = await supabase
+      .from("student_profiles")
+      .select("memory_context")
+      .eq("alias_id", data.aliasId)
+      .single();
+      
+    const existingMemory = profile?.memory_context || "None yet.";
+
+    // Summarize the chat into new memory points, combining with existing
+    const prompt = `You are updating the long-term memory for a user. Based on the Recent Chat History, extract key personal details to remember for next time (e.g., upcoming events, hobbies, current problems, preferences) and integrate them into the Existing Memory Context. Keep it as a concise, consolidated list of bullet points. Do not include introductory text.
+
+Existing Memory Context:
+${existingMemory}
+
+Recent Chat History:
+${data.chatHistory}`;
 
     const response = await fetch(
       `${DEFAULT_GEMINI_API_BASE_URL}/models/${DEFAULT_GEMINI_MODEL}:generateContent`,
@@ -184,7 +202,7 @@ export const updateChatMemory = createServerFn({ method: "POST" })
 
     if (!response.ok) return { success: false };
     const result = await response.json();
-    const newContext = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const newContext = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || existingMemory;
 
     // Store in DB
     await supabase

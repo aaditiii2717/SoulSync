@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { 
@@ -34,6 +34,16 @@ export const SessionWorkspace = memo(({
   onAIGenerate,
   moodHistory
 }: SessionWorkspaceProps) => {
+  const [isEditing, setIsEditing] = useState(true);
+
+  useEffect(() => {
+    if (crmNotes && crmNotes.length > 0) {
+      setIsEditing(false);
+    } else {
+      setIsEditing(true);
+    }
+  }, [crmNotes]);
+
   if (!selectedSession) return null;
 
   return (
@@ -155,7 +165,10 @@ export const SessionWorkspace = memo(({
                        <Button 
                          variant="ghost" 
                          size="sm" 
-                         onClick={onAIGenerate}
+                         onClick={() => {
+                           setIsEditing(true);
+                           onAIGenerate();
+                         }}
                          disabled={notesLoading}
                          className="h-8 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 text-[10px] font-black uppercase tracking-widest"
                        >
@@ -165,20 +178,35 @@ export const SessionWorkspace = memo(({
                     </div>
                     
                     <div className="relative flex-1 group">
-                       <textarea
-                         value={newNote}
-                         onChange={(e) => setNewNote(e.target.value)}
-                         placeholder="Synthesize the session, key takeaways, and handoff notes for the next volunteer..."
-                         className="w-full h-80 lg:h-full min-h-[400px] p-8 rounded-[2.5rem] bg-slate-50 border border-slate-100 focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all outline-none text-sm text-slate-700 leading-relaxed resize-none"
-                       />
+                       {!isEditing ? (
+                         <div className="w-full h-80 lg:h-full min-h-[400px] p-8 rounded-[2.5rem] bg-slate-50 border border-slate-100 overflow-y-auto text-sm text-slate-700 leading-relaxed">
+                            <div className="whitespace-pre-wrap">{newNote}</div>
+                         </div>
+                       ) : (
+                         <textarea
+                           value={newNote}
+                           onChange={(e) => setNewNote(e.target.value)}
+                           placeholder="Synthesize the session, key takeaways, and handoff notes for the next volunteer..."
+                           className="w-full h-80 lg:h-full min-h-[400px] p-8 rounded-[2.5rem] bg-slate-50 border border-slate-100 focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all outline-none text-sm text-slate-700 leading-relaxed resize-none"
+                         />
+                       )}
                        <div className="absolute bottom-6 right-6 flex items-center gap-3">
-                          <Button 
-                            onClick={onSaveNote}
-                            disabled={notesLoading || !newNote.trim()}
-                            className="h-12 px-8 rounded-2xl bg-slate-900 text-white font-black text-xs shadow-xl transition-all hover:scale-105 active:scale-95"
-                          >
-                             {notesLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : "Secure Save"}
-                          </Button>
+                          {!isEditing ? (
+                            <Button 
+                              onClick={() => setIsEditing(true)}
+                              className="h-12 px-8 rounded-2xl bg-white border border-slate-200 text-slate-700 font-black text-xs shadow-sm transition-all hover:bg-slate-50 active:scale-95"
+                            >
+                               Edit
+                            </Button>
+                          ) : (
+                            <Button 
+                              onClick={onSaveNote}
+                              disabled={notesLoading || !newNote.trim()}
+                              className="h-12 px-8 rounded-2xl bg-slate-900 text-white font-black text-xs shadow-xl transition-all hover:scale-105 active:scale-95"
+                            >
+                               {notesLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : "Secure Save"}
+                            </Button>
+                          )}
                        </div>
                     </div>
 

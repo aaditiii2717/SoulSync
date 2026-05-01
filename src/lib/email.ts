@@ -19,7 +19,7 @@ export const sendEmail = createServerFn({ method: "POST" })
           "Authorization": `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          from: "SoulSync <onboarding@resend.dev>",
+          from: "SoulSync <soulsyncsoul@gmail.com>",
           to,
           subject,
           html,
