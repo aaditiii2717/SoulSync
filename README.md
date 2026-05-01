@@ -176,7 +176,6 @@ Follow these steps to run SoulSync locally:
 *   **Aadit** - Full Stack Developer & UI/UX Designer
 *   *(Add other team members here)*
 
----
 <div align="center">
   <b>Built with for student resilience. Because no student should have to navigate their hardest days alone.</b>
 </div>
