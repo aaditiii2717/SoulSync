@@ -30,7 +30,7 @@ export function CTASection() {
                 </Button>
               </Link>
               <Link to="/resources">
-                <Button variant="outline" size="xl" className="h-16 rounded-full border-white/30 px-10 text-white hover:bg-white/10 backdrop-blur-md">
+                <Button variant="outline" size="xl" className="h-16 rounded-full border-white/30 px-10 !text-white hover:bg-white/10 backdrop-blur-md">
                   Explore Resources
                 </Button>
               </Link>

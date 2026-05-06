@@ -84,9 +84,10 @@ export const CrisisMap: React.FC = () => {
       // Use Overpass API (OpenStreetMap) to find hospitals and clinics
       const query = `[out:json];
         (
-          node["amenity"="hospital"](around:5000, ${lat}, ${lng});
-          node["amenity"="clinic"](around:5000, ${lat}, ${lng});
-          node["healthcare"="mental_health"](around:10000, ${lat}, ${lng});
+          node["healthcare"="mental_health"](around:15000, ${lat}, ${lng});
+          node["healthcare"="psychotherapist"](around:15000, ${lat}, ${lng});
+          node["healthcare"="psychiatrist"](around:15000, ${lat}, ${lng});
+          node["amenity"="clinic"]["healthcare:speciality"="psychiatry"](around:15000, ${lat}, ${lng});
         );
         out body;`;
       

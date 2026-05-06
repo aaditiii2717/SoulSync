@@ -380,7 +380,33 @@ function PeerMatchPage() {
         .order("start_time", { ascending: true });
       
       if (error) throw error;
-      setSlots((data as TimeSlot[]) || []);
+
+      let fetchedSlots = (data as TimeSlot[]) || [];
+
+      // Google Solution Challenge - Demo Slot Fallback
+      if (fetchedSlots.length === 0) {
+         const tomorrow = new Date();
+         tomorrow.setDate(tomorrow.getDate() + 1);
+         const demoSlotDate = tomorrow.toISOString().split("T")[0];
+         
+         const { data: insertedSlot, error: insertError } = await supabase
+           .from("time_slots")
+           .insert({
+             volunteer_id: volunteerId,
+             slot_date: demoSlotDate,
+             start_time: "10:00:00",
+             end_time: "11:00:00",
+             is_booked: false
+           })
+           .select()
+           .single();
+           
+         if (!insertError && insertedSlot) {
+            fetchedSlots = [insertedSlot];
+         }
+      }
+      
+      setSlots(fetchedSlots);
     } catch (err) {
       console.error("Fetch slots error:", err);
       toast.error("Could not retrieve availability. Please try again.");

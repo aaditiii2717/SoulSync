@@ -98,15 +98,23 @@ export const Navbar = memo(() => {
         <div className="glass-card rounded-[1.75rem] px-4 sm:px-6">
           <div className="flex min-h-[4.5rem] min-w-0 items-center justify-between gap-3">
             <Link to="/" className="flex min-w-0 flex-1 items-center gap-3 md:flex-none">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl gradient-wellness shadow-[0_18px_36px_-22px_oklch(0.45_0.12_145_/_0.9)] sm:h-11 sm:w-11">
-                <HeartHandshake className="h-5 w-5 text-primary-foreground" />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center sm:h-11 sm:w-11 overflow-hidden">
+                <img 
+                  src="/logo.png" 
+                  alt="SoulSync Logo" 
+                  className="h-full w-full object-contain"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/heart-handshake.svg';
+                    e.currentTarget.className = 'h-6 w-6 opacity-50';
+                  }}
+                />
               </div>
               <div className="min-w-0">
                 <span className="block truncate font-display text-[1.3rem] font-semibold leading-none text-gradient sm:text-[1.45rem] lg:text-[1.6rem]">
                   SoulSync
                 </span>
                 <p className="mt-1 hidden text-[0.56rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground sm:block xl:text-[0.65rem] xl:tracking-[0.28em]">
-                  Care That Feels Close
+                  Harmony. Healing. Growth.
                 </p>
               </div>
             </Link>

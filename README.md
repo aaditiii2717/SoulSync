@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="https://via.placeholder.com/150x150.png?text=SoulSync+Logo" alt="SoulSync Logo" width="150" height="150" />
-  
+  <img src="public/logo.png" alt="SoulSync Logo" width="200" height="200" />
+
   #  SoulSync: India Resilience Hub 🇮🇳
   
   ### **Empowering students through AI-driven peer support and autonomous resilience tools.**
